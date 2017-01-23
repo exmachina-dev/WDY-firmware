@@ -1,6 +1,3 @@
-[submodule "lib/libartnet"]
-	path = lib/libartnet
-	url = git@git.exmachina.fr:libartnet.git
 [submodule "lib/CANopenNode"]
 	path = lib/CANopenNode
 	url = git@git.exmachina.fr:CANopenNode.git
