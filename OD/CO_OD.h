@@ -78,16 +78,16 @@ typedef domain_t     CO_DOMAIN;
     #define CO_NO_SYNC                1       // Associated objects: 0x1005, 0x1006, 0x1007
     #define CO_NO_EMERGENCY           1       // Associated objects: 0x1014, 0x1015
     #define CO_NO_SDO_SERVER          1       // Associated objects: 0x1200
-    #define CO_NO_SDO_CLIENT          2       // Associated objects: 0x1280, 0x1281
-    #define CO_NO_RPDO                3       // Associated objects: 0x1400, 0x1401, 0x1402, 0x1600, 0x1601, 0x1602
-    #define CO_NO_TPDO                3       // Associated objects: 0x1800, 0x1801, 0x1802, 0x1a00, 0x1a01, 0x1a02
+    #define CO_NO_SDO_CLIENT          1       // Associated objects: 0x1280
+    #define CO_NO_RPDO                1       // Associated objects: 0x1400, 0x1600
+    #define CO_NO_TPDO                1       // Associated objects: 0x1800, 0x1a00
     #define CO_NO_NMT_MASTER          1       
 
 
 /*******************************************************************************
     OBJECT DICTIONARY
 *******************************************************************************/
-   #define CO_OD_NoOfElements             51
+   #define CO_OD_NoOfElements             28
 
 
 /*******************************************************************************
@@ -105,18 +105,18 @@ typedef domain_t     CO_DOMAIN;
         CO_UNSIGNED32       COB_IDClientToServer;
         CO_UNSIGNED32       COB_IDServerToClient;
 } OD_SDOServerParameter_t;
-/* 0x1280[2] */  typedef struct{
+/* 0x1280[1] */  typedef struct{
         CO_UNSIGNED8        maxSubIndex;
         CO_UNSIGNED32       COB_IDClientToServer;
         CO_UNSIGNED32       COB_IDServerToClient;
         CO_UNSIGNED8        nodeIDOfTheSDOServer;
 } OD_SDOClientParameter_t;
-/* 0x1400[3] */  typedef struct{
+/* 0x1400[1] */  typedef struct{
         CO_UNSIGNED8        maxSubIndex;
         CO_UNSIGNED32       COB_IDUsedByRPDO;
         CO_UNSIGNED8        transmissionType;
 } OD_RPDOCommunicationParameter_t;
-/* 0x1600[3] */  typedef struct{
+/* 0x1600[1] */  typedef struct{
         CO_UNSIGNED8        numberOfMappedObjects;
         CO_UNSIGNED32       mappedObject1;
         CO_UNSIGNED32       mappedObject2;
@@ -127,7 +127,7 @@ typedef domain_t     CO_DOMAIN;
         CO_UNSIGNED32       mappedObject7;
         CO_UNSIGNED32       mappedObject8;
 } OD_RPDOMappingParameter_t;
-/* 0x1800[3] */  typedef struct{
+/* 0x1800[1] */  typedef struct{
         CO_UNSIGNED8        maxSubIndex;
         CO_UNSIGNED32       COB_IDUsedByTPDO;
         CO_UNSIGNED8        transmissionType;
@@ -136,7 +136,7 @@ typedef domain_t     CO_DOMAIN;
         CO_UNSIGNED16       eventTimer;
         CO_UNSIGNED8        SYNCStartValue;
 } OD_TPDOCommunicationParameter_t;
-/* 0x1a00[3] */  typedef struct{
+/* 0x1a00[1] */  typedef struct{
         CO_UNSIGNED8        numberOfMappedObjects;
         CO_UNSIGNED32       mappedObject1;
         CO_UNSIGNED32       mappedObject2;
@@ -163,7 +163,7 @@ struct sCO_OD_RAM{
 /* 0x1003     */ CO_UNSIGNED32                   preDefinedErrorField[1];
 /* 0x1010     */ CO_UNSIGNED32                   storeParameters[1];
 /* 0x1011     */ CO_UNSIGNED32                   restoreDefaultParameters[1];
-/* 0x1280[2]  */ OD_SDOClientParameter_t         SDOClientParameter[2];
+/* 0x1280[1]  */ OD_SDOClientParameter_t         SDOClientParameter[1];
 
                CO_UNSIGNED32     LastWord;
 };
@@ -198,25 +198,11 @@ struct sCO_OD_ROM{
 /* 0x1019     */ CO_UNSIGNED8                    synchronousCounterOverflowValue;
 /* 0x1029     */ CO_UNSIGNED8                    errorBehavior[6];
 /* 0x1200[1]  */ OD_SDOServerParameter_t         SDOServerParameter[1];
-/* 0x1400[3]  */ OD_RPDOCommunicationParameter_t RPDOCommunicationParameter[3];
-/* 0x1600[3]  */ OD_RPDOMappingParameter_t       RPDOMappingParameter[3];
-/* 0x1800[3]  */ OD_TPDOCommunicationParameter_t TPDOCommunicationParameter[3];
-/* 0x1a00[3]  */ OD_TPDOMappingParameter_t       TPDOMappingParameter[3];
+/* 0x1400[1]  */ OD_RPDOCommunicationParameter_t RPDOCommunicationParameter[1];
+/* 0x1600[1]  */ OD_RPDOMappingParameter_t       RPDOMappingParameter[1];
+/* 0x1800[1]  */ OD_TPDOCommunicationParameter_t TPDOCommunicationParameter[1];
+/* 0x1a00[1]  */ OD_TPDOMappingParameter_t       TPDOMappingParameter[1];
 /* 0x1f80     */ CO_UNSIGNED32                   NMTStartup;
-/* 0x2100     */ CO_UNSIGNED8                    remoteNodeArray[2];
-/* 0x2101     */ CO_UNSIGNED8                    remoteNodeTX_PDO1Array[2];
-/* 0x2102     */ CO_UNSIGNED8                    remoteNodeRX_PDO1Array[2];
-/* 0x2103     */ CO_UNSIGNED8                    remoteNodeTX_PDO2Array[2];
-/* 0x2104     */ CO_UNSIGNED8                    remoteNodeRX_PDO2Array[2];
-/* 0x2105     */ CO_UNSIGNED8                    remoteNodeServerSDOArray[2];
-/* 0x2106     */ CO_UNSIGNED8                    remoteNodeClientSDOArray[2];
-/* 0x2107     */ CO_UNSIGNED8                    remoteNodeDigitalOutputBytesArray[2];
-/* 0x2108     */ CO_UNSIGNED8                    remoteNodeInputBytesArray[2];
-/* 0x2109     */ CO_UNSIGNED8                    remoteNodeTX_PDO3Array[2];
-/* 0x210a     */ CO_UNSIGNED8                    remoteNodeRX_PDO3Array[2];
-/* 0x210b     */ CO_UNSIGNED8                    remoteNodeRX_PDO5Array[2];
-/* 0x210c     */ CO_UNSIGNED8                    remoteNodeTX_PDO4Array[2];
-/* 0x210d     */ CO_UNSIGNED8                    remoteNodeRX_PDO4Array[3];
 /* 0x2200     */ CO_OCTET_STRING                 errorStatusBits[10];
 
                CO_UNSIGNED32     LastWord;
@@ -313,107 +299,23 @@ extern struct sCO_OD_ROM CO_OD_ROM;
 /* 0x1200   data type: OD_SDOServerParameter_t */
     #define OD_SDOServerParameter                             CO_OD_ROM.SDOServerParameter
 
-/* 0x1280   data type: OD_SDOClientParameter_t, array[2] */
+/* 0x1280   data type: OD_SDOClientParameter_t */
     #define OD_SDOClientParameter                             CO_OD_RAM.SDOClientParameter
 
-/* 0x1400   data type: OD_RPDOCommunicationParameter_t, array[3] */
+/* 0x1400   data type: OD_RPDOCommunicationParameter_t */
     #define OD_RPDOCommunicationParameter                     CO_OD_ROM.RPDOCommunicationParameter
 
-/* 0x1600   data type: OD_RPDOMappingParameter_t, array[3] */
+/* 0x1600   data type: OD_RPDOMappingParameter_t */
     #define OD_RPDOMappingParameter                           CO_OD_ROM.RPDOMappingParameter
 
-/* 0x1800   data type: OD_TPDOCommunicationParameter_t, array[3] */
+/* 0x1800   data type: OD_TPDOCommunicationParameter_t */
     #define OD_TPDOCommunicationParameter                     CO_OD_ROM.TPDOCommunicationParameter
 
-/* 0x1a00   data type: OD_TPDOMappingParameter_t, array[3] */
+/* 0x1a00   data type: OD_TPDOMappingParameter_t */
     #define OD_TPDOMappingParameter                           CO_OD_ROM.TPDOMappingParameter
 
 /* 0x1f80   data type: CO_UNSIGNED32 */
     #define OD_NMTStartup                                     CO_OD_ROM.NMTStartup
-
-/* 0x2100   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeArray                                CO_OD_ROM.remoteNodeArray
-    #define ODL_remoteNodeArray_arrayLength                   2
-    #define ODA_remoteNodeArray_node01Type                    0
-    #define ODA_remoteNodeArray_node02Type                    1
-
-/* 0x2101   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeTX_PDO1Array                         CO_OD_ROM.remoteNodeTX_PDO1Array
-    #define ODL_remoteNodeTX_PDO1Array_arrayLength            2
-    #define ODA_remoteNodeTX_PDO1Array_node01Type             0
-    #define ODA_remoteNodeTX_PDO1Array_node02Type             1
-
-/* 0x2102   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeRX_PDO1Array                         CO_OD_ROM.remoteNodeRX_PDO1Array
-    #define ODL_remoteNodeRX_PDO1Array_arrayLength            2
-    #define ODA_remoteNodeRX_PDO1Array_node01Type             0
-    #define ODA_remoteNodeRX_PDO1Array_node02Type             1
-
-/* 0x2103   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeTX_PDO2Array                         CO_OD_ROM.remoteNodeTX_PDO2Array
-    #define ODL_remoteNodeTX_PDO2Array_arrayLength            2
-    #define ODA_remoteNodeTX_PDO2Array_node01Type             0
-    #define ODA_remoteNodeTX_PDO2Array_node02Type             1
-
-/* 0x2104   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeRX_PDO2Array                         CO_OD_ROM.remoteNodeRX_PDO2Array
-    #define ODL_remoteNodeRX_PDO2Array_arrayLength            2
-    #define ODA_remoteNodeRX_PDO2Array_node01Type             0
-    #define ODA_remoteNodeRX_PDO2Array_node02Type             1
-
-/* 0x2105   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeServerSDOArray                       CO_OD_ROM.remoteNodeServerSDOArray
-    #define ODL_remoteNodeServerSDOArray_arrayLength          2
-    #define ODA_remoteNodeServerSDOArray_node01Type           0
-    #define ODA_remoteNodeServerSDOArray_node02Type           1
-
-/* 0x2106   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeClientSDOArray                       CO_OD_ROM.remoteNodeClientSDOArray
-    #define ODL_remoteNodeClientSDOArray_arrayLength          2
-    #define ODA_remoteNodeClientSDOArray_node01Type           0
-    #define ODA_remoteNodeClientSDOArray_node02Type           1
-
-/* 0x2107   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeDigitalOutputBytesArray              CO_OD_ROM.remoteNodeDigitalOutputBytesArray
-    #define ODL_remoteNodeDigitalOutputBytesArray_arrayLength 2
-    #define ODA_remoteNodeDigitalOutputBytesArray_node01Type  0
-    #define ODA_remoteNodeDigitalOutputBytesArray_node02Type  1
-
-/* 0x2108   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeInputBytesArray                      CO_OD_ROM.remoteNodeInputBytesArray
-    #define ODL_remoteNodeInputBytesArray_arrayLength         2
-    #define ODA_remoteNodeInputBytesArray_node01Type          0
-    #define ODA_remoteNodeInputBytesArray_node02Type          1
-
-/* 0x2109   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeTX_PDO3Array                         CO_OD_ROM.remoteNodeTX_PDO3Array
-    #define ODL_remoteNodeTX_PDO3Array_arrayLength            2
-    #define ODA_remoteNodeTX_PDO3Array_node01Type             0
-    #define ODA_remoteNodeTX_PDO3Array_node02Type             1
-
-/* 0x210a   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeRX_PDO3Array                         CO_OD_ROM.remoteNodeRX_PDO3Array
-    #define ODL_remoteNodeRX_PDO3Array_arrayLength            2
-    #define ODA_remoteNodeRX_PDO3Array_node01Type             0
-    #define ODA_remoteNodeRX_PDO3Array_node02Type             1
-
-/* 0x210b   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeRX_PDO5Array                         CO_OD_ROM.remoteNodeRX_PDO5Array
-    #define ODL_remoteNodeRX_PDO5Array_arrayLength            2
-    #define ODA_remoteNodeRX_PDO5Array_node01Type             0
-    #define ODA_remoteNodeRX_PDO5Array_node02Type             1
-
-/* 0x210c   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeTX_PDO4Array                         CO_OD_ROM.remoteNodeTX_PDO4Array
-    #define ODL_remoteNodeTX_PDO4Array_arrayLength            2
-    #define ODA_remoteNodeTX_PDO4Array_node01Type             0
-    #define ODA_remoteNodeTX_PDO4Array_node02Type             1
-
-/* 0x210d   data type: CO_UNSIGNED8 */
-    #define OD_remoteNodeRX_PDO4Array                         CO_OD_ROM.remoteNodeRX_PDO4Array
-    #define ODL_remoteNodeRX_PDO4Array_arrayLength            2
-    #define ODA_remoteNodeRX_PDO4Array_node01Type             0
-    #define ODA_remoteNodeRX_PDO4Array_node02Type             1
 
 /* 0x2200   data type: CO_OCTET_STRING */
     #define OD_errorStatusBits                                CO_OD_ROM.errorStatusBits
