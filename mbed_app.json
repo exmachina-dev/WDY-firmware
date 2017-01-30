@@ -1,0 +1,21 @@
+{
+    "config": {
+        "can_port": {
+            "value": 0
+        }
+    },
+    "macros": [
+        "MBED_MEM_TRACING_ENABLED",
+        "CO_SDO_BUFFER_SIZE=8",
+        "MBED_CONF_LWIP_DNS=0",
+        "MBED_CONF_LWIP_DHCP=1"
+    ],
+    "target_overrides" : {
+        "*": {
+            "lwip.socket-max": 1,
+            "lwip.udp-socket-max": 1,
+            "lwip.tcp-socket-max": 1,
+            "lwip.tcp-server-max": 1
+        }
+    }
+}
