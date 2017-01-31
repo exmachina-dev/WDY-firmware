@@ -302,9 +302,9 @@ static void LAN_app_task(void) {
             LAN_eth->set_dhcp(dhcp);
             if (!dhcp) {
                 printf("MAC: %s\r\n", LAN_eth->get_mac_address());
-                ip_addr.s_addr = 0x280080C0;
+                ip_addr.s_addr = 0x2800A8C0;
                 nm_addr.s_addr = 0x00FFFFFF;
-                gw_addr.s_addr = 0x00000000;
+                gw_addr.s_addr = 0x0100A8C0;
                 strncpy(ip_str, inet_ntoa(ip_addr), sizeof(ip_str));
                 strncpy(nm_str, inet_ntoa(nm_addr), sizeof(nm_str));
                 strncpy(gw_str, inet_ntoa(gw_addr), sizeof(gw_str));
@@ -318,6 +318,7 @@ static void LAN_app_task(void) {
 
             if (rtn != 0) {
                 printf("Failed to set network: %d\r\n", rtn);
+                Thread::wait(10000);
                 // artnet_error("Failed to set network: %d", rtn);
                 continue;
             }
@@ -327,6 +328,7 @@ static void LAN_app_task(void) {
 
             if (rtn != 0) {
                 printf("Failed to connect: %d\r\n", rtn);
+                Thread::wait(10000);
                 // artnet_error("Failed to set network: %d", rtn);
                 continue;
             }
@@ -360,7 +362,7 @@ static void LAN_app_task(void) {
                 continue;
             }
 
-            // LAN_sock->set_blocking(false);
+            LAN_sock->set_blocking(false);
 
             // allow reusing 6454 port _
             // Not possible with UDPSocket ?
@@ -400,11 +402,8 @@ static void LAN_app_task(void) {
             read_rtn = LAN_read(&LAN_node, LAN_packet);
             if (read_rtn > 0) {
                 printf("%d\r\n", read_rtn);
-            } else if (read_rtn < 0) {
-                printf("!%d\r\n", read_rtn);
             }
 
-            spd_led = !spd_led;
             Thread::wait(1);
         }
 
@@ -413,5 +412,5 @@ static void LAN_app_task(void) {
 }
 
 void _dmx_cb(uint16_t port, uint8_t *dmx_data) {
-    spd_led = (dmx_data[0] << 8) + dmx_data[1];
+    spd_led = (float)((dmx_data[0] << 8) + dmx_data[1]) / 0xFFFF;
 }

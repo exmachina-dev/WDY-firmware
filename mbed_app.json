@@ -13,7 +13,7 @@
     "target_overrides" : {
         "*": {
             "lwip.socket-max": 1,
-            "lwip.udp-socket-max": 1,
+            "lwip.udp-socket-max": 2,
             "lwip.tcp-socket-max": 1,
             "lwip.tcp-server-max": 1
         }
