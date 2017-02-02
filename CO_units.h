@@ -8,7 +8,7 @@ typedef union {
 
 typedef union {
     uint8_t bytes[4];
-    float to_integer;
+    int to_integer;
 } bint;
 
 #endif // CO_UNITS_H_

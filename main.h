@@ -37,6 +37,19 @@ extern "C" {
 #define TMR_TASK_INTERVAL   (1000)  // Interval of tmrTask thread in microseconds
 #define INCREMENT_1MS(var)  (var++) // Increment 1ms variable in tmrTask
 
+struct dmx_device_parameter_s {
+    uint8_t command;
+    uint16_t position;
+    uint16_t speed;
+} __attribute__((packed));
+
+typedef struct dmx_device_parameter_s dmx_device_parameter_t;
+
+typedef union {
+    uint8_t data[5];
+    dmx_device_parameter_t parameter;
+} dmx_device_union_t;
+
 int main(void);
 
 static void CO_app_task(void);

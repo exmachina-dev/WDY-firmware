@@ -1,6 +1,6 @@
 #include "CO_helpers.h"
 
-uint32_t swapBytes(uint32_t from) {
+uint32_t swapBytes32(uint32_t from) {
     uint32_t to;
     uint8_t b0, b1, b2, b3;
 
@@ -13,6 +13,19 @@ uint32_t swapBytes(uint32_t from) {
 
     return to;
 }
+
+uint16_t swapBytes16(uint16_t from) {
+    uint16_t to;
+    uint8_t b0, b1;
+
+    b0 = (from & 0xff);
+    b1 = (from & 0xff00) >> 8u;
+
+    to = b1 | (b0 << 8u);
+
+    return to;
+}
+
 int CO_SDO_write(
         uint8_t     remoteNodeId,
         uint16_t    index,      uint8_t     subIndex,

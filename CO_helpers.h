@@ -15,7 +15,9 @@ extern volatile uint16_t    CO_timer1ms;    /* from main */
 
 extern CO_t *CO;
 
-uint32_t swapBytes(uint32_t from);
+uint32_t swapBytes32(uint32_t from);
+
+uint16_t swapBytes16(uint16_t from);
 
 int CO_SDO_write(uint8_t remoteNodeId, uint16_t index, uint8_t subIndex,
         uint8_t *dataTx, uint32_t dataSize, uint32_t *SDOabortCode, uint16_t SDOtimeoutTime);

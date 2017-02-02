@@ -7,8 +7,8 @@ extern "C" {
 #include "CO_OD.h"
 }
 
-#define DMX_START       4
-#define DMX_FOOTPRINT   4
+#define DMX_START       0
+#define DMX_FOOTPRINT   5
 
 #define ARTNET_DEBUG
 
@@ -50,9 +50,15 @@ Thread LAN_app_thread;
 
 Serial USBport(USBTX, USBRX);
 
+dmx_device_union_t DMXdevice;
+dmx_device_union_t _lastDMXdevice;
+bool new_command_sig = false;
+
 int main(void) {
+#if MBED_CONF_APP_MEMTRACE
     mbed_stats_heap_t heap_stats;
     mbed_mem_trace_set_callback(mbed_mem_trace_default_callback);
+#endif
 
     LAN_eth = &_eth;
     LAN_packet = &_packet;
@@ -62,16 +68,15 @@ int main(void) {
     ticker_1ms.attach_us(&CO_timer1ms_task, 1000);
     ticker_leds.attach(&CO_leds_task, 0.01);
 
-    int rtn;
     CO_NMT_reset_cmd_t reset;
 
     wdog.kick(10); // First watchdog kick to trigger it
 
-    // USBport.printf("|=====================|\r\n");
-    // USBport.printf("|    Winch Dynamic    |\r\n");
-    // USBport.printf("|    by ExMachina     |\r\n");
-    // USBport.printf("|=====================|\r\n");
-    // USBport.printf("\r\n");
+    printf("|=====================|\r\n");
+    printf("|    Winch Dynamic    |\r\n");
+    printf("|    by ExMachina     |\r\n");
+    printf("|=====================|\r\n");
+    printf("\r\n");
 
     // Status led setup
     spd_led.period(0.02);
@@ -80,20 +85,22 @@ int main(void) {
 
     // Artnet init
     can_led = 1;
-    USBport.printf("\r\n");
-    USBport.printf("\r\n");
+    printf("\r\n");
+    printf("\r\n");
 
-    USBport.printf("LAN_thread\r\n");
+    printf("LAN_thread");
     LAN_app_thread.start(LAN_app_task);
-    USBport.printf(".\r\n");
+    printf(".\r\n");
 
-    USBport.printf("\r\n");
+    printf("\r\n");
 
-    // CANopen init
+#if MBED_CONF_APP_MEMTRACE
     mbed_stats_heap_get(&heap_stats);
     printf("Current heap: %lu\r\n", heap_stats.current_size);
     printf("Max heap size: %lu\r\n", heap_stats.max_size);
+#endif
 
+    // CANopen init
     reset = CO_RESET_NOT;
 
     while(reset != CO_RESET_APP){
@@ -105,43 +112,49 @@ int main(void) {
         wdog.kick(); // Kick the watchdog
 
         // initialize CANopen
-        USBport.printf("malloc\r\n");
+        printf("malloc");
         err = CO_init(
                 (int32_t)0,             // CAN module address
-                (uint8_t)CO_LPC_NODEID,    // NodeID
+                (uint8_t)CO_NODEID,    // NodeID
                 (uint16_t)CO_BUS_BITRATE); // bit rate
 
         if(err != CO_ERROR_NO){
-            //err_led = 1;
+            err_led = 1;
+#if MBED_CONF_APP_MEMTRACE
             mbed_stats_heap_get(&heap_stats);
             printf("Current heap: %lu\r\n", heap_stats.current_size);
             printf("Max heap size: %lu\r\n", heap_stats.max_size);
+#endif
 
-            USBport.printf(" error: %d\r\n", err);
-            USBport.printf(" size of OD_RAM: %d\r\n", sizeof(sCO_OD_RAM));
-            USBport.printf(" size of OD_ROM: %d\r\n", sizeof(sCO_OD_ROM));
-            USBport.printf(" size of OD_EEPROM: %d\r\n", sizeof(sCO_OD_EEPROM));
+            printf(" error: %d\r\n", err);
+            printf(" size of OD_RAM: %d\r\n", sizeof(sCO_OD_RAM));
+            printf(" size of OD_ROM: %d\r\n", sizeof(sCO_OD_ROM));
+            printf(" size of OD_EEPROM: %d\r\n", sizeof(sCO_OD_EEPROM));
             while(1);
                 CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err);
         }
         USBport.printf(". \r\n");
 
+#if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
         printf("Current heap: %lu\r\n", heap_stats.current_size);
         printf("Max heap size: %lu\r\n", heap_stats.max_size);
+#endif
 
         CO_CANsetNormalMode(CO->CANmodule[0]);
 
         // Configure CAN transmit and receive interrupt
 
-        USBport.printf("attach");
+        USBport.printf("CO_attach");
         CANport->attach(&CO_CANInterruptHandler, CAN::RxIrq);
         CANport->attach(&CO_CANInterruptHandler, CAN::TxIrq);
         USBport.printf(".\r\n");
 
+#if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
         printf("Current heap: %lu\r\n", heap_stats.current_size);
         printf("Max heap size: %lu\r\n", heap_stats.max_size);
+#endif
 
         // Start CAN
         ticker_sync.attach_us(&CO_sync_task, 1000);     // Only start CO_sync after CO_init !
@@ -149,9 +162,12 @@ int main(void) {
         USBport.printf("CO_app_thread");
         CO_app_thread.start(CO_app_task);
         USBport.printf(". \r\n");
+
+#if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
         printf("Current heap: %lu\r\n", heap_stats.current_size);
         printf("Max heap size: %lu\r\n", heap_stats.max_size);
+#endif
 
 
         can_led = 0;
@@ -217,8 +233,9 @@ static void CO_app_task(void){
             uint32_t    readSize;
             MFEnode_t   node;
 
-#if (CO_LPC_NODEID == 1) // If the LPC is the master node
+#if (CO_NODEID == 1) // If the LPC is the master node
             while (err != 0) {
+                printf("Connecting to drive\r\n");
                 CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
 
                 CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
@@ -229,23 +246,38 @@ static void CO_app_task(void){
                 if (err) continue;
 
                 err = MFE_connect(&node, 100);
+                printf("drive: %d\r\n", err);
 
                 CO->NMT->operatingState = CO_NMT_OPERATIONAL;
             }
 
             abortCode = 0;
             readSize = 0;
-            err = CO_SDO_read(CO_DRV_NODEID, 0x3f00, 0x01, dataBuf, sizeof(dataBuf), &abortCode, &readSize, 100);
-            if (readSize == 4) {
+            err = CO_SDO_read(CO_DRV_NODEID, 0x3f00, 0x15, dataBuf, sizeof(dataBuf), &abortCode, &readSize, 100);
+
+            if (readSize == 4 && false) {
                 bfloat _temp = { .bytes = { dataBuf[0], dataBuf[1], dataBuf[2], dataBuf[3] << 0 }};
 
                 USBport.printf("READ 3f00 1: %f\r\n", _temp.to_float);
                 _temp.to_float += 10.0;
-                err = CO_SDO_write(CO_DRV_NODEID, 0x3f00, 0x02, _temp.bytes, 4, &abortCode, 100);
-                USBport.printf("WRITE 3f80 2: %d %x\r\n", err, swapBytes(abortCode));
+                err = CO_SDO_write(CO_DRV_NODEID, 0x3f00, 0x16, _temp.bytes, 4, &abortCode, 100);
+                USBport.printf("WRITE 3f80 2: %d %x\r\n", err, swapBytes32(abortCode));
+            // } else {
+            //     USBport.printf("READ 3f80 2: %d %x\r\n", err, swapBytes32(abortCode));
             }
+
+            if (new_command_sig) {
+                bint _spd = { .to_integer = DMXdevice.parameter.speed };
+                bint _pos = { .to_integer = DMXdevice.parameter.position };
+                err = CO_SDO_write(CO_DRV_NODEID, 0x3f00, 0x04, _spd.bytes, 4, &abortCode, 100);
+                err = CO_SDO_write(CO_DRV_NODEID, 0x3f00, 0x05, _pos.bytes, 4, &abortCode, 100);
+                USBport.printf("write DMX values: %d %d %x\r\n", _spd.to_integer, err, swapBytes32(abortCode));
+                new_command_sig = false;
+            };
 #endif
         }
+
+        Thread::wait(5);
     }
 
 }
@@ -302,9 +334,20 @@ static void LAN_app_task(void) {
             LAN_eth->set_dhcp(dhcp);
             if (!dhcp) {
                 printf("MAC: %s\r\n", LAN_eth->get_mac_address());
-                ip_addr.s_addr = 0x2800A8C0;
-                nm_addr.s_addr = 0x00FFFFFF;
-                gw_addr.s_addr = 0x0100A8C0;
+                unsigned int values[6];
+                uint8_t bytes[6];
+                if( 6 == sscanf(LAN_eth->get_mac_address(), "%x:%x:%x:%x:%x:%x",
+                            &values[0], &values[1], &values[2],
+                            &values[3], &values[4], &values[5] ) )
+                {
+                    /* convert to uint8_t */
+                    for(uint8_t i = 0; i < 6; ++i )
+                        bytes[i] = (uint8_t) values[i];
+                }
+
+                ip_addr.s_addr = (bytes[5] << 24) + (bytes[4] << 16) + ((bytes[3] + OEM_LO) << 8) + 0x02;
+                nm_addr.s_addr = 0x000000FF;
+                gw_addr.s_addr = 0x00000000;
                 strncpy(ip_str, inet_ntoa(ip_addr), sizeof(ip_str));
                 strncpy(nm_str, inet_ntoa(nm_addr), sizeof(nm_str));
                 strncpy(gw_str, inet_ntoa(gw_addr), sizeof(gw_str));
@@ -389,7 +432,7 @@ static void LAN_app_task(void) {
 
             LAN_set_network(&LAN_node, ip_addr, bc_addr, gw_addr, nm_addr, mac_addr);
             LAN_set_port(&LAN_node, 0, 0);
-            LAN_set_dmx(&LAN_node, 0, 4);
+            LAN_set_dmx(&LAN_node, DMX_START, DMX_FOOTPRINT);
             LAN_set_dmx_callback(&LAN_node, &_dmx_cb);
             LAN_set_name(&LAN_node, WDY_SHORT_NAME, WDY_LONG_NAME);
 
@@ -412,5 +455,17 @@ static void LAN_app_task(void) {
 }
 
 void _dmx_cb(uint16_t port, uint8_t *dmx_data) {
-    spd_led = (float)((dmx_data[0] << 8) + dmx_data[1]) / 0xFFFF;
+    memcpy(&_lastDMXdevice.data, &DMXdevice.data, DMX_FOOTPRINT);
+
+    memcpy(&DMXdevice.data, dmx_data, DMX_FOOTPRINT);
+    DMXdevice.parameter.speed = swapBytes16(DMXdevice.parameter.speed);
+    DMXdevice.parameter.position = swapBytes16(DMXdevice.parameter.position);
+    spd_led = (float)DMXdevice.parameter.speed / 0xFFFF;
+    pos_led = (float)DMXdevice.parameter.position / 0xFFFF;
+
+    if (_lastDMXdevice.parameter.speed != DMXdevice.parameter.speed ||
+            _lastDMXdevice.parameter.position != DMXdevice.parameter.position ||
+            _lastDMXdevice.parameter.command != DMXdevice.parameter.command) {
+        new_command_sig = true;
+    }
 }
