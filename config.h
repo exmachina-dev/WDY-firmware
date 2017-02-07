@@ -17,7 +17,7 @@
 // ==============
 
 #define MBED_CAN            (0)
-#define CO_BUS_BITRATE      500
+#define CO_BUS_BITRATE      1000
 #define CO_NODEID           0x01
 #define CO_DRV_NODEID       0x02
 
