@@ -10,6 +10,7 @@
 /* Specific includes */
 
 #include "leds.h"
+#include "fans.h"
 #include "watchdog.h"
 
 /* Artnet includes */
