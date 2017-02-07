@@ -84,7 +84,7 @@ int main(void) {
 
     // Status led setup
     spd_led.period(0.02);
-    //pos_led.period(0.02);
+    pos_led.period(0.02);
 
 
     // Artnet init
@@ -231,6 +231,10 @@ static void CO_app_task(void){
     uint8_t dataBuf[CO_SDO_BUFFER_SIZE];
     bdata_t netdataBuf;
 
+    uint16_t timer1msPrevious;
+    uint16_t timer1msCopy, timer1msDiff;
+    uint16_t timerTempPrevious;
+
     while (true) {
 
         if(CO != NULL && CO->CANmodule[0]->CANnormal) {
@@ -253,6 +257,7 @@ static void CO_app_task(void){
                 err = MFE_connect(&node, 100);
                 printf("drive: %d\r\n", err);
 
+                CO_sendNMTcommand(CO, CO_NMT_OPERATIONAL, CO_NODEID);
                 CO->NMT->operatingState = CO_NMT_OPERATIONAL;
             }
 
@@ -326,7 +331,7 @@ static void CO_timer1ms_task(void) {
 // Led update task
 static void CO_leds_task(void) {
     can_led = LED_GREEN_RUN(CO->NMT) ? true : false;
-    //err_led = LED_RED_ERROR(CO->NMT) ? true : false;
+    err_led = LED_RED_ERROR(CO->NMT) ? true : false;
 }
 
 // CAN interrupt function
