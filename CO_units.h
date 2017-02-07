@@ -4,11 +4,7 @@
 typedef union {
     uint8_t bytes[4];
     float to_float;
-} bfloat;
-
-typedef union {
-    uint8_t bytes[4];
-    int to_integer;
-} bint;
+    int to_int;
+} bdata_t;
 
 #endif // CO_UNITS_H_

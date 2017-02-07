@@ -225,6 +225,7 @@ int main(void) {
 static void CO_app_task(void){
     uint8_t err = 1;
     uint8_t dataBuf[CO_SDO_BUFFER_SIZE];
+    bdata_t netdataBuf;
 
     while (true) {
 
