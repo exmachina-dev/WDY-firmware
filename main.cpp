@@ -78,6 +78,10 @@ int main(void) {
     printf("|=====================|\r\n");
     printf("\r\n");
 
+    // Fans default speed
+    fan_top = 1.0;
+    fan_bot = 1.0;
+
     // Status led setup
     spd_led.period(0.02);
     //pos_led.period(0.02);
@@ -252,27 +256,37 @@ static void CO_app_task(void){
                 CO->NMT->operatingState = CO_NMT_OPERATIONAL;
             }
 
+            timer1msCopy = CO_timer1ms;
+            timer1msDiff = timer1msCopy - timer1msPrevious;
+            timer1msPrevious = timer1msCopy;
+
             abortCode = 0;
             readSize = 0;
-            err = CO_SDO_read(CO_DRV_NODEID, 0x3f00, 0x15, dataBuf, sizeof(dataBuf), &abortCode, &readSize, 100);
 
-            if (readSize == 4 && false) {
-                bfloat _temp = { .bytes = { dataBuf[0], dataBuf[1], dataBuf[2], dataBuf[3] << 0 }};
+            if ((timer1msCopy - timerTempPrevious) >= 500) {
+                err = MFE_read_netdata(&node, 20, &netdataBuf, 100);
+                if (!err) {
+                    bdata_t _temp;
+                    memcpy(&_temp.bytes, &netdataBuf.bytes, sizeof(_temp.bytes));
 
-                USBport.printf("READ 3f00 1: %f\r\n", _temp.to_float);
-                _temp.to_float += 10.0;
-                err = CO_SDO_write(CO_DRV_NODEID, 0x3f00, 0x16, _temp.bytes, 4, &abortCode, 100);
-                USBport.printf("WRITE 3f80 2: %d %x\r\n", err, swapBytes32(abortCode));
-            // } else {
-            //     USBport.printf("READ 3f80 2: %d %x\r\n", err, swapBytes32(abortCode));
+                    fan_top = (float)(_temp.to_float / 50.0);
+                    fan_bot = (float)(_temp.to_float / 50.0);
+
+                    USBport.printf("drive temp: %f %f\r\n", _temp.to_float, (float)(_temp.to_float / 50.0));
+                } else {
+                    fan_top = 1.0;
+                    fan_bot = 1.0;
+                }
+
+                timerTempPrevious = timer1msCopy;
             }
 
             if (new_command_sig) {
-                bint _spd = { .to_integer = DMXdevice.parameter.speed };
-                bint _pos = { .to_integer = DMXdevice.parameter.position };
+                bdata_t _spd = { .to_int = DMXdevice.parameter.speed };
+                bdata_t _pos = { .to_int = DMXdevice.parameter.position };
                 err = CO_SDO_write(CO_DRV_NODEID, 0x3f00, 0x04, _spd.bytes, 4, &abortCode, 100);
                 err = CO_SDO_write(CO_DRV_NODEID, 0x3f00, 0x05, _pos.bytes, 4, &abortCode, 100);
-                USBport.printf("write DMX values: %d %d %x\r\n", _spd.to_integer, err, swapBytes32(abortCode));
+                USBport.printf("write DMX values: %d %d %x\r\n", _spd.to_int, err, swapBytes32(abortCode));
                 new_command_sig = false;
             };
 #endif
