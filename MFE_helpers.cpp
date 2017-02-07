@@ -37,6 +37,7 @@
 #include "MFE_helpers.h"
 
 #include "CO_helpers.h"
+#include "CO_units.h"
 
 extern "C" {
 #include "CO_driver.h"
@@ -104,31 +105,59 @@ uint8_t MFE_scan(uint8_t remoteNodeId, MFEnode_t *node, uint16_t timeoutTime) {
 }
 
 uint8_t MFE_connect(MFEnode_t *node, uint16_t timeoutTime) {
-    uint8_t err = 0;
-
     uint8_t _err = 0;
-    uint8_t _nodeId = node->nodeId;
-    uint8_t _dataRx[4];
-    uint8_t _dataTx[4];
+    bdata_t _dataTx;
+    uint32_t _abortCode = 0;
+
+    _dataTx.to_int = 0x0501;
+    // _dataTx[0] = 0x01; _dataTx[1] = 0x05; _dataTx[2] = 0x00; _dataTx[3] = 0x00; // COB-ID: 501
+    _err = CO_SDO_write(node->nodeId, MFE_index_SDO_ClientParameter_2, 0x01, _dataTx.bytes, 4, &_abortCode, timeoutTime);
+
+    _dataTx.to_int = 0x0481;
+    _err = CO_SDO_write(node->nodeId, MFE_index_SDO_ClientParameter_2, 0x01, _dataTx.bytes, 4, &_abortCode, timeoutTime);
+
+    _dataTx.bytes[0] = 0x01; // Node-ID of the SDO server
+    _err = CO_SDO_write(node->nodeId, MFE_index_SDO_ClientParameter_2, 0x01, _dataTx.bytes, 1, &_abortCode, timeoutTime);
+
+    _dataTx.bytes[0] = 0x25; // NodeType of the master
+    _err = CO_SDO_write(node->nodeId, MFE_index_RemoteNodeType, 0x01, _dataTx.bytes, 1, &_abortCode, timeoutTime);
+
+    _dataTx.bytes[0] = 0x01; // Node-ID of the SDO server
+    _err = CO_SDO_write(node->nodeId, MFE_index_RemoteNodeClientSDO, 0x01, _dataTx.bytes, 1, &_abortCode, timeoutTime);
+
+    CO_sendNMTcommand(CO, CO_NMT_ENTER_OPERATIONAL, node->nodeId);
+
+    return _err;
+}
+
+uint8_t MFE_read_netdata(MFEnode_t *node, uint16_t nd_index, bdata_t *dataRx, uint16_t timeoutTime) {
+    uint8_t _err = 0;
     uint32_t _abortCode = 0;
     uint32_t _readSize = 0;
 
-    _dataTx[0] = 0x01; _dataTx[1] = 0x05; _dataTx[2] = 0x00; _dataTx[3] = 0x00; // COB-ID: 501
-    _err = CO_SDO_write(_nodeId, MFE_index_SDO_ClientParameter_2, 0x01, _dataTx, 4, &_abortCode, timeoutTime);
+    uint16_t nd_array = MFE_index_NetDataArray_1 + ((nd_index + 1) >> 8);
 
-    _dataTx[0] = 0x81; _dataTx[1] = 0x04; _dataTx[2] = 0x00; _dataTx[3] = 0x00; // COB-ID: 481
-    _err = CO_SDO_write(_nodeId, MFE_index_SDO_ClientParameter_2, 0x01, _dataTx, 4, &_abortCode, timeoutTime);
+    _err = CO_SDO_read(node->nodeId, nd_array, nd_index + 1, dataRx->bytes, sizeof(dataRx->bytes), &_abortCode, &_readSize, timeoutTime);
 
-    _dataTx[0] = 0x01; // Node-ID of the SDO server
-    _err = CO_SDO_write(_nodeId, MFE_index_SDO_ClientParameter_2, 0x01, _dataTx, 1, &_abortCode, timeoutTime);
+    if (_readSize != 4) {
+        return 255;
+    }
 
-    _dataTx[0] = 0x25; // NodeType of the master
-    _err = CO_SDO_write(_nodeId, MFE_index_RemoteNodeType, 0x01, _dataTx, 1, &_abortCode, timeoutTime);
+    // dataRx->bytes = swapBytes32(dataRx->bytes);
 
-    _dataTx[0] = 0x01; // Node-ID of the SDO server
-    _err = CO_SDO_write(_nodeId, MFE_index_RemoteNodeClientSDO, 0x01, _dataTx, 1, &_abortCode, timeoutTime);
+    return _err;
+}
 
-    CO_sendNMTcommand(CO, CO_NMT_ENTER_OPERATIONAL, _nodeId);
+uint8_t MFE_write_netdata(MFEnode_t *node, uint16_t nd_index, bdata_t *dataTx, uint16_t timeoutTime) {
+    uint8_t _err = 0;
+    uint32_t _abortCode = 0;
+
+    uint16_t nd_array = MFE_index_NetDataArray_1 + ((nd_index + 1) >> 8);
+
+    _err = CO_SDO_write(node->nodeId, nd_array, nd_index + 1, dataTx->bytes, sizeof(dataTx->bytes), &_abortCode, timeoutTime);
+
+
+    // dataRx->bytes = swapBytes32(dataRx->bytes);
 
     return _err;
 }

@@ -2,6 +2,7 @@
 #define MFE_HELPERS_
 
 #include "CO_helpers.h"
+#include "CO_units.h"
 
 enum MFE_errors {
     MFE_ERROR_NONE,
@@ -99,5 +100,9 @@ typedef struct {
 uint8_t MFE_scan(uint8_t remoteNodeId, MFEnode_t *node, uint16_t timeoutTime);
 
 uint8_t MFE_connect(MFEnode_t *remoteNodeId, uint16_t timeoutTime);
+
+uint8_t MFE_read_netdata(MFEnode_t *node, uint16_t nd_index, bdata_t *dataRx, uint16_t timeoutTime);
+
+uint8_t MFE_write_netdata(MFEnode_t *node, uint16_t nd_index, bdata_t *dataTx, uint16_t timeoutTime);
 
 #endif // MFE_HELPERS_
