@@ -4,6 +4,8 @@
 #include "CO_helpers.h"
 #include "CO_units.h"
 
+#define MFE_TIMEOUT         10
+
 enum MFE_errors {
     MFE_ERROR_NONE,
     MFE_ERROR_NODE_UNAVAILABLE,
@@ -89,6 +91,19 @@ enum MFE_index_enum {
     MFE_index_NetDataArray_4                      = 0x3F03
 };
 
+enum MFE_netdata {
+    MFE_ND_SPEED_CMD =          0,
+    MFE_ND_POSITION_CMD =       1,
+    MFE_ND_COMMAND =            2,
+    MFE_ND_ACCEL_CMD =          3,
+    MFE_ND_DECEL_CMD =          4,
+
+    MFE_ND_SPEED_STS =          5,
+    MFE_ND_POSITION_STS =       6,
+    MFE_ND_STATUS =             7,
+    MFE_ND_TEMP_STS =           20
+};
+
 typedef struct {
     uint8_t  nodeId;
     uint32_t deviceType;
@@ -104,5 +119,24 @@ uint8_t MFE_connect(MFEnode_t *remoteNodeId, uint16_t timeoutTime);
 uint8_t MFE_read_netdata(MFEnode_t *node, uint16_t nd_index, bdata_t *dataRx, uint16_t timeoutTime);
 
 uint8_t MFE_write_netdata(MFEnode_t *node, uint16_t nd_index, bdata_t *dataTx, uint16_t timeoutTime);
+
+
+uint8_t MFE_set_speed(MFEnode_t *node, bdata_t *dataTx);
+
+uint8_t MFE_set_position(MFEnode_t *node, bdata_t *dataTx);
+
+uint8_t MFE_set_command(MFEnode_t *node, bdata_t *dataTx);
+
+uint8_t MFE_set_accel(MFEnode_t *node, bdata_t *dataTx);
+
+uint8_t MFE_set_decel(MFEnode_t *node, bdata_t *dataTx);
+
+uint8_t MFE_get_speed(MFEnode_t *node, bdata_t *dataRx);
+
+uint8_t MFE_get_position(MFEnode_t *node, bdata_t *dataRx);
+
+uint8_t MFE_get_status(MFEnode_t *node, bdata_t *dataRx);
+
+uint8_t MFE_get_temp(MFEnode_t *node, bdata_t *dataRx);
 
 #endif // MFE_HELPERS_

@@ -161,3 +161,41 @@ uint8_t MFE_write_netdata(MFEnode_t *node, uint16_t nd_index, bdata_t *dataTx, u
 
     return _err;
 }
+
+// MFE helper functions for quick read/write parameters
+
+uint8_t MFE_set_speed(MFEnode_t *node, bdata_t *dataTx) {
+    return MFE_write_netdata(node, MFE_ND_SPEED_CMD, dataTx, MFE_TIMEOUT);
+}
+
+uint8_t MFE_set_position(MFEnode_t *node, bdata_t *dataTx) {
+    return MFE_write_netdata(node, MFE_ND_POSITION_CMD, dataTx, MFE_TIMEOUT);
+}
+
+uint8_t MFE_set_command(MFEnode_t *node, bdata_t *dataTx) {
+    return MFE_write_netdata(node, MFE_ND_COMMAND, dataTx, MFE_TIMEOUT);
+}
+
+uint8_t MFE_set_accel(MFEnode_t *node, bdata_t *dataTx) {
+    return MFE_write_netdata(node, MFE_ND_ACCEL_CMD, dataTx, MFE_TIMEOUT);
+}
+
+uint8_t MFE_set_decel(MFEnode_t *node, bdata_t *dataTx) {
+    return MFE_write_netdata(node, MFE_ND_DECEL_CMD, dataTx, MFE_TIMEOUT);
+}
+
+uint8_t MFE_get_speed(MFEnode_t *node, bdata_t *dataRx) {
+    return MFE_read_netdata(node, MFE_ND_SPEED_STS, dataRx, MFE_TIMEOUT);
+}
+
+uint8_t MFE_get_position(MFEnode_t *node, bdata_t *dataRx) {
+    return MFE_read_netdata(node, MFE_ND_POSITION_STS, dataRx, MFE_TIMEOUT);
+}
+
+uint8_t MFE_get_status(MFEnode_t *node, bdata_t *dataRx) {
+    return MFE_read_netdata(node, MFE_ND_STATUS, dataRx, MFE_TIMEOUT);
+}
+
+uint8_t MFE_get_temp(MFEnode_t *node, bdata_t *dataRx) {
+    return MFE_read_netdata(node, MFE_ND_TEMP_STS, dataRx, MFE_TIMEOUT);
+}
