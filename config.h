@@ -24,7 +24,46 @@
 // Product config
 // ==============
 
-#define WDY_SHORT_NAME  "Winch Dynamic"
+#define WDY_SHORT_NAME  "WDY3000"
 #define WDY_LONG_NAME   "Winch Dynamic by ExMachina"
+
+// Physic constants
+// ----------------
+#define WDY_STRAP_LENGTH        30000   // mm
+#define WDY_STRAP_THICKNESS     1.1     // mm
+
+#define WDY_DRUM_CORE_DIA       120     // mm
+
+#define WDY_STRAP_FIXED_OFFSET  428     // mm - This is the length of the strap path
+
+#define WDY_GEARBOX_RATIO       6       // The gearbox ratio between the motor and the drum
+
+#define WDY_DEFAULT_ACCEL       1
+#define WDY_DEFAULT_DECEL       1
+
+// Limits
+// ------
+#define WDY_MAX_SPEED           3000    // mm.s
+#define WDY_MAX_POSITION        WDY_STRAP_LENGTH
+#define WDY_MIN_POSITION        0
+
+
+// Encoder
+// -------
+#define WDY_ENCODER_VFQ         (10)    // Lower value means the speed is calculated over a longer time interval
+                                        //     This may help reduce noise
+#define WDY_ENCODER_PPR         2000    // 500ppr * 4 edges
+#define WDY_ENCODER_WHEEL_DIA   16.6    // mm
+
+// This the factor in order to convert rps to mm/s
+#define WDY_ENCODER_FACTOR      (WDY_STRAP_THICKNESS + WDY_ENCODER_WHEEL_DIA) * WDY_PI
+
+#define WDY_ENCODER_HOME_OFFSET 0
+
+#define WDY_INVERT_POSITION     1
+
+// Math constants
+// --------------
+#define WDY_PI                  3.1415926535
 
 #endif
