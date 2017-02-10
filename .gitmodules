@@ -8,3 +8,6 @@
 [submodule "lib/libLightArtNET"]
 	path = lib/libLightArtNET
 	url = git@git.exmachina.fr:LPC1768/libLightArtNET.git
+[submodule "lib/libQEI"]
+	path = lib/libQEI
+	url = git@git.exmachina.fr:LPC1768/libQEI.git
