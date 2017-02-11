@@ -1,7 +1,10 @@
 
 #include "main.h"
+
+#if MBED_CONF_APP_MEMTRACE
 #include "mbed_stats.h"
 #include "mbed_mem_trace.h"
+#endif
 
 extern "C" {
 #include "CO_OD.h"
