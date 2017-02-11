@@ -35,8 +35,14 @@ extern "C" {
 
 #include "MFE_helpers.h"
 
+#include "WDY_helpers.h"
+
 #define TMR_TASK_INTERVAL   (1000)  // Interval of tmrTask thread in microseconds
 #define INCREMENT_1MS(var)  (var++) // Increment 1ms variable in tmrTask
+
+/* libQEI includes */
+
+#include "QEI.h"
 
 struct dmx_device_parameter_s {
     uint8_t command;

@@ -16,10 +16,18 @@ extern "C" {
 
 Watchdog wdog;
 
+// CANopen
 volatile uint16_t   CO_timer1ms = 0U;   // variable increments each millisecond
 
 extern "C" void mbed_reset();
 
+Ticker ticker_1ms;
+Ticker ticker_sync;
+Ticker ticker_leds;
+
+Thread CO_app_thread;
+
+// ArtNet
 EthernetInterface* LAN_eth = NULL;
 EthernetInterface _eth;
 
@@ -41,18 +49,18 @@ uint8_t swout[4];
 
 artnet_node_t LAN_node;
 
-Ticker ticker_1ms;
-Ticker ticker_sync;
-Ticker ticker_leds;
-
-Thread CO_app_thread;
 Thread LAN_app_thread;
-
-Serial USBport(USBTX, USBRX);
 
 dmx_device_union_t DMXdevice;
 dmx_device_union_t _lastDMXdevice;
 bool new_command_sig = false;
+
+// Encoder
+QEI encoder(QEI_4XCOUNT | QEI_INVERT);
+
+// Serial
+Serial USBport(USBTX, USBRX);
+
 
 int main(void) {
 #if MBED_CONF_APP_MEMTRACE
@@ -83,8 +91,14 @@ int main(void) {
     fan_bot = 1.0;
 
     // Status led setup
-    spd_led.period(0.02);
-    pos_led.period(0.02);
+    led1.period(0.02);
+    led2.period(0.02);
+
+
+    // Encoder init
+    encoder.setVelocityFrequency(WDY_ENCODER_VFQ);
+    encoder.setPPR(WDY_ENCODER_PPR);
+    encoder.setLinearFactor(WDY_ENCODER_FACTOR);
 
 
     // Artnet init
@@ -208,8 +222,8 @@ int main(void) {
     // Flash all leds
     can_led = 1;
     //err_led = 1;
-    spd_led = 1;
-    //pos_led = 1;
+    led1 = 1;
+    //led2 = 1;
 
     // Terminate threads
     // CO_tmr_thread.terminate();
@@ -228,28 +242,48 @@ int main(void) {
 // Application thread
 static void CO_app_task(void){
     uint8_t err = 1;
-    uint8_t dataBuf[CO_SDO_BUFFER_SIZE];
-    bdata_t netdataBuf;
 
     uint16_t timer1msPrevious;
-    uint16_t timer1msCopy, timer1msDiff;
-    uint16_t timerTempPrevious;
+    uint16_t timer1msCopy;
+    uint16_t timerTempPrevious = 0;
+    uint16_t timerTempDiff = 0;
+
+    MFEnode_t   node;
+
+    float enc_position;
+    float real_speed;
+    float real_position;
+    float cmd_speed;
+    float cmd_position;
+    float old_position = -1;
+
+    uint16_t homing_time = 0;
+
+    wdy_status_t status;
+    wdy_command_t command;
+
+    bdata_t nd_spd;
+    bdata_t nd_pos;
+    bdata_t nd_cmd;
+    bdata_t nd_sts;
+    bdata_t nd_accel;
+    bdata_t nd_decel;
+    bdata_t nd_temp;
+    bdata_t nd_mot_spd;
+    bdata_t nd_mot_pos;
 
     while (true) {
 
         if(CO != NULL && CO->CANmodule[0]->CANnormal) {
-            uint32_t    abortCode=0;
-            uint32_t    readSize;
-            MFEnode_t   node;
 
-#if (CO_NODEID == 1) // If the LPC is the master node
             while (err != 0) {
                 printf("Connecting to drive\r\n");
                 CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
 
-                CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
+                err = CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
+                if (err) continue;
 
-                Thread::wait(5000);
+                Thread::wait(500);
 
                 err = MFE_scan(CO_DRV_NODEID, &node, 100);
                 if (err) continue;
@@ -257,47 +291,116 @@ static void CO_app_task(void){
                 err = MFE_connect(&node, 100);
                 printf("drive: %d\r\n", err);
 
-                CO_sendNMTcommand(CO, CO_NMT_OPERATIONAL, CO_NODEID);
                 CO->NMT->operatingState = CO_NMT_OPERATIONAL;
             }
 
             timer1msCopy = CO_timer1ms;
-            timer1msDiff = timer1msCopy - timer1msPrevious;
             timer1msPrevious = timer1msCopy;
 
-            abortCode = 0;
-            readSize = 0;
+            if (new_command_sig) {
+                uint16_t raw_speed = DMXdevice.parameter.speed;
+                uint16_t raw_position = DMXdevice.parameter.position;
+                uint8_t raw_command = DMXdevice.parameter.command;
 
-            if ((timer1msCopy - timerTempPrevious) >= 500) {
-                err = MFE_read_netdata(&node, 20, &netdataBuf, 100);
-                if (!err) {
+                map_DMX_to_world(raw_speed, &cmd_speed, WDY_MAX_SPEED);
+                map_DMX_to_world(raw_position, &cmd_position, WDY_MAX_POSITION);
+                map_DMXcommand_to_command(raw_command, &command);
+
+                printf("D P: %d\r\n", raw_position);
+                printf("R P: %f\r\n", cmd_position);
+                printf("\r\n");
+
+
+                printf("D S: %d\r\n", raw_speed);
+                printf("R S: %f\r\n", cmd_speed);
+                printf("\r\n");
+                printf("--\r\n");
+
+                new_command_sig = false;
+            }
+
+            // Control loop of speed and position regarding external encoder
+
+            if (command == WDY_CMD_ENABLE && status == WDY_STS_HOMED) {
+                // First, get real position from encoder
+                enc_position = encoder.getPosition();
+
+                // Compute actual speed according to position
+                nd_spd.to_float = linear_speed_to_rps(cmd_speed, length_to_drum_diameter(enc_position));
+                MFE_set_speed(&node, &nd_spd);
+
+                if (old_position != cmd_position) {
+                    nd_pos.to_float = length_to_drum_turns(cmd_position);
+                    MFE_set_position(&node, &nd_pos);
+                    old_position = cmd_position;
+                }
+            }
+            else if (status == WDY_STS_HOME_IN_PROGRESS) {
+                err = MFE_get_status(&node, &nd_sts);
+                if (err != 0)
+                    status = WDY_STS_COMM_FAULT;
+
+                if (nd_sts.to_int && WDY_STS_HOME_IN_PROGRESS) {
+                    status = WDY_STS_HOME_IN_PROGRESS;
+                    homing_time++;
+                }
+                else if (nd_sts.to_int && WDY_STS_HOMED) {
+                    encoder.setHome(WDY_ENCODER_HOME_OFFSET);
+
+                    nd_accel.to_int = WDY_DEFAULT_ACCEL;
+                    nd_decel.to_int = WDY_DEFAULT_DECEL;
+                    err = MFE_set_accel(&node, &nd_accel);
+                    err += MFE_set_decel(&node, &nd_decel);
+                    if (err == 0) {
+                        status = WDY_STS_HOMED;
+                    } else {
+                        status = WDY_STS_COMM_FAULT;
+                    }
+                }
+            }
+            else if (command == WDY_CMD_HOME) {
+                status = WDY_STS_HOME_IN_PROGRESS;
+
+                nd_cmd.to_int = WDY_CMD_HOME;
+                err = MFE_set_command(&node, &nd_cmd);
+                if (err != 0) {
+                    status = WDY_STS_COMM_FAULT;
+                }
+            }
+            else {
+                nd_cmd.to_int = WDY_CMD_NONE;
+                err = MFE_set_command(&node, &nd_cmd);
+                if (err != 0) {
+                    status = WDY_STS_COMM_FAULT;
+                }
+            }
+
+            timerTempDiff = timer1msCopy - timerTempPrevious;
+            if (timerTempDiff >= 500) {
+                err = MFE_get_temp(&node, &nd_temp);
+                if (err == 0) {
                     bdata_t _temp;
-                    memcpy(&_temp.bytes, &netdataBuf.bytes, sizeof(_temp.bytes));
+                    memcpy(&_temp.bytes, &nd_temp.bytes, BDATA_SIZE);
 
-                    fan_top = (float)(_temp.to_float / 50.0);
-                    fan_bot = (float)(_temp.to_float / 50.0);
+                    fan_top = 0.35 + (float)((_temp.to_float / 50.0) * 0.65);
+                    fan_bot = 0.35 + (float)((_temp.to_float / 50.0) * 0.65);
 
-                    USBport.printf("drive temp: %f %f\r\n", _temp.to_float, (float)(_temp.to_float / 50.0));
                 } else {
                     fan_top = 1.0;
                     fan_bot = 1.0;
                 }
 
                 timerTempPrevious = timer1msCopy;
+                led1 = !led1;
             }
 
-            if (new_command_sig) {
-                bdata_t _spd = { .to_int = DMXdevice.parameter.speed };
-                bdata_t _pos = { .to_int = DMXdevice.parameter.position };
-                err = CO_SDO_write(CO_DRV_NODEID, 0x3f00, 0x04, _spd.bytes, 4, &abortCode, 100);
-                err = CO_SDO_write(CO_DRV_NODEID, 0x3f00, 0x05, _pos.bytes, 4, &abortCode, 100);
-                USBport.printf("write DMX values: %d %d %x\r\n", _spd.to_int, err, swapBytes32(abortCode));
-                new_command_sig = false;
-            };
-#endif
+            led2 = !led2;
+        } else {
+            printf("Waiting for CAN.\r\n");
+            Thread::wait(1000);
         }
 
-        Thread::wait(5);
+        Thread::wait(10);
     }
 
 }
@@ -467,7 +570,7 @@ static void LAN_app_task(void) {
                 printf("%d\r\n", read_rtn);
             }
 
-            Thread::wait(1);
+            Thread::wait(10);
         }
 
         Thread::wait(50);
@@ -480,12 +583,18 @@ void _dmx_cb(uint16_t port, uint8_t *dmx_data) {
     memcpy(&DMXdevice.data, dmx_data, DMX_FOOTPRINT);
     DMXdevice.parameter.speed = swapBytes16(DMXdevice.parameter.speed);
     DMXdevice.parameter.position = swapBytes16(DMXdevice.parameter.position);
-    spd_led = (float)DMXdevice.parameter.speed / 0xFFFF;
-    pos_led = (float)DMXdevice.parameter.position / 0xFFFF;
 
-    if (_lastDMXdevice.parameter.speed != DMXdevice.parameter.speed ||
+    led3 = (float)DMXdevice.parameter.speed / 0xFFFF;
+    led4 = (float)DMXdevice.parameter.position / 0xFFFF;
+
+    if (
+            _lastDMXdevice.parameter.speed != DMXdevice.parameter.speed ||
             _lastDMXdevice.parameter.position != DMXdevice.parameter.position ||
             _lastDMXdevice.parameter.command != DMXdevice.parameter.command) {
+        _lastDMXdevice.parameter.position = DMXdevice.parameter.position;
+        _lastDMXdevice.parameter.speed = DMXdevice.parameter.speed;
+        _lastDMXdevice.parameter.command = DMXdevice.parameter.command;
+        printf("New cmd.\r\n");
         new_command_sig = true;
     }
 }
