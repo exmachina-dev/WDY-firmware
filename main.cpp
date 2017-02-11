@@ -300,7 +300,7 @@ static void CO_app_task(void){
             timer1msCopy = CO_timer1ms;
             timer1msPrevious = timer1msCopy;
 
-            if (new_command_sig) {
+            if (new_command_sig) {                          // New DMX data
                 uint16_t raw_speed = DMXdevice.parameter.speed;
                 uint16_t raw_position = DMXdevice.parameter.position;
                 uint8_t raw_command = DMXdevice.parameter.command;
@@ -309,22 +309,21 @@ static void CO_app_task(void){
                 map_DMX_to_world(raw_position, &cmd_position, WDY_MAX_POSITION);
                 map_DMXcommand_to_command(raw_command, &command);
 
-                printf("D P: %d\r\n", raw_position);
-                printf("R P: %f\r\n", cmd_position);
+                printf("DMX_pos: %d\r\n", raw_position);
+                printf("REAL_pos: %f\r\n", cmd_position);
                 printf("\r\n");
 
 
-                printf("D S: %d\r\n", raw_speed);
-                printf("R S: %f\r\n", cmd_speed);
-                printf("\r\n");
+                printf("DMX_spd: %d\r\n", raw_speed);
+                printf("REAL_spd: %f\r\n", cmd_speed);
                 printf("--\r\n");
 
-                new_command_sig = false;
+                new_command_sig = false;                    // Reset signal
             }
 
-            // Control loop of speed and position regarding external encoder
 
-            if (command == WDY_CMD_ENABLE && status == WDY_STS_HOMED) {
+            // Control loop of speed and position regarding external encoder
+            if (command == WDY_CMD_ENABLE && status == WDY_STS_HOMED) {     // Normal loop
                 // First, get real position from encoder
                 enc_position = encoder.getPosition();
 
@@ -332,13 +331,13 @@ static void CO_app_task(void){
                 nd_spd.to_float = linear_speed_to_rps(cmd_speed, length_to_drum_diameter(enc_position));
                 MFE_set_speed(&node, &nd_spd);
 
-                if (old_position != cmd_position) {
-                    nd_pos.to_float = length_to_drum_turns(cmd_position);
+                if (old_position != cmd_position) {         // New position required
+                    nd_pos.to_float = length_to_drum_turns(cmd_position); // Position: real to turn
                     MFE_set_position(&node, &nd_pos);
                     old_position = cmd_position;
                 }
             }
-            else if (status == WDY_STS_HOME_IN_PROGRESS) {
+            else if (status == WDY_STS_HOME_IN_PROGRESS) { // Homing in progress
                 err = MFE_get_status(&node, &nd_sts);
                 if (err != 0)
                     status = WDY_STS_COMM_FAULT;
@@ -348,12 +347,14 @@ static void CO_app_task(void){
                     homing_time++;
                 }
                 else if (nd_sts.to_int && WDY_STS_HOMED) {
-                    encoder.setHome(WDY_ENCODER_HOME_OFFSET);
+                    encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Once the drive is homed, reset encoder position
 
+                    // Set defaults
                     nd_accel.to_int = WDY_DEFAULT_ACCEL;
                     nd_decel.to_int = WDY_DEFAULT_DECEL;
                     err = MFE_set_accel(&node, &nd_accel);
                     err += MFE_set_decel(&node, &nd_decel);
+
                     if (err == 0) {
                         status = WDY_STS_HOMED;
                     } else {
@@ -361,7 +362,7 @@ static void CO_app_task(void){
                     }
                 }
             }
-            else if (command == WDY_CMD_HOME) {
+            else if (command == WDY_CMD_HOME) {     // Home command issued
                 status = WDY_STS_HOME_IN_PROGRESS;
 
                 nd_cmd.to_int = WDY_CMD_HOME;
@@ -370,7 +371,7 @@ static void CO_app_task(void){
                     status = WDY_STS_COMM_FAULT;
                 }
             }
-            else {
+            else {                                  // Stop by default
                 nd_cmd.to_int = WDY_CMD_NONE;
                 err = MFE_set_command(&node, &nd_cmd);
                 if (err != 0) {
@@ -379,7 +380,7 @@ static void CO_app_task(void){
             }
 
             timerTempDiff = timer1msCopy - timerTempPrevious;
-            if (timerTempDiff >= 500) {
+            if (timerTempDiff >= 500) {             // Adjust temperature according to drive temperature
                 err = MFE_get_temp(&node, &nd_temp);
                 if (err == 0) {
                     bdata_t _temp;
