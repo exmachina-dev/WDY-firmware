@@ -8,8 +8,6 @@
 
 #include "mbed.h"
 
-DigitalOut led(LED1);
-
 class Watchdog {
 public:
     void kick(float s) {
