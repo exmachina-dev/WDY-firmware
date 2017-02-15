@@ -1,0 +1,324 @@
+' Custom bitfields
+Bitfield Command
+  all As 0 To 31
+  drive_enable As 0
+  home_command As 1
+  flip_bit As 3
+End Bitfield
+
+Bitfield Status
+  all As 0 To 31
+  enabled As 0
+  homed As 1 To 3
+  brake As 4
+  soft_limit_fw As 5
+  soft_limit_rw As 6
+  hard_limit_fw As 7
+  hard_limit_rw As 8
+  is_idle As 9
+  unpowered As 10
+  comm_fault As 11
+  flip_bit As 12
+End Bitfield
+
+Bitfield HomeStatus_b
+  all As 0 To 31
+  homed As 0
+  home_in_progress As 1
+  timeout As 2
+End Bitfield
+
+' Global values
+Dim _homeStatus As HomeStatus_b
+Dim _forceDisable As Integer = 0
+Dim _lastPos As Float = 0
+Dim _lastStatus As Status
+
+' Constants
+Const _axis As Integer = 0
+Const _maxSpeed As Float = 100
+
+Const _defaultAccel As Float = 1
+Const _defaultSpeed As Float = 1
+
+Const _homeAccel As Float = 10
+Const _homeSpeed As Float = 1
+Const _homeRefPos As Float = 0.15
+
+Const _waitForDER As Integer = 5000    ' 5s
+Const _waitForHome As Integer = 30000  ' 30s
+
+Run(updateTemp)
+Run(updateStatus)
+
+Loop
+  NETFLOAT(5) = VEL(_axis)
+  NETFLOAT(6) = POS(_axis)
+
+  If canDriveEnable() AndAlso (DRIVEENABLE(_axis) = 0) Then
+    DRIVEENABLE(_axis) = 1
+  End If
+
+  Wait(50)
+End Loop
+End
+
+
+
+Task updateTemp
+  Loop
+    NETFLOAT(20) = TEMPERATURE(_axis)
+    Wait(250)
+  End Loop
+End Task
+
+
+
+Task updateStatus
+  Loop
+    Dim _status As Status
+
+    _status.enabled = DRIVEENABLE(_axis)
+    _status.homed = _homeStatus.all
+    _status.brake = MOTORBRAKESTATUS(_axis)
+    _status.soft_limit_fw = POS(_axis) >= SOFTLIMITFORWARD(_axis)
+    _status.soft_limit_rw = POS(_axis) <= SOFTLIMITREVERSE(_axis)
+    _status.hard_limit_fw = LIMITFORWARD(_axis)
+    _status.hard_limit_rw = LIMITREVERSE(_axis)
+    _status.unpowered = DRIVEBUSVOLTS(_axis) < Float(DRIVEBUSUNDERVOLTS(_axis))
+    _status.comm_fault = BUSSTATE(_busCANOPEN) <> 0
+    _status.flip_bit = Not(_lastStatus.flip_bit And 1)
+
+    NETINTEGER(7) = _status.all
+    _lastStatus.all = _status.all
+    Wait(50)
+  End Loop
+End Task
+
+
+
+Function clampToMaxSpeed(ByVal lspeed As Float) As Float
+  Dim cspeed As Float
+
+  If lspeed > _maxSpeed Then
+    cspeed = _maxSpeed
+  ElseIf lspeed < 0 Then
+    cspeed = clampToMaxSpeed(lspeed * -1)
+  Else
+    cspeed = lspeed
+  End If
+  clampToMaxSpeed = cspeed
+End Function
+
+
+
+Function canDriveEnable() As Integer
+  If DRIVEENABLEREADY(_axis) AndAlso (_homeStatus.homed = 1) _
+     AndAlso (_forceDisable = 0) Then
+    canDriveEnable = 1
+  Else
+    canDriveEnable = 0
+  End If
+End Function
+
+
+
+Sub doHome()
+  Dim t0 As Time = 0
+
+  _homeStatus.all = 0
+  _homeStatus.home_in_progress = 1
+  STOP(_axis)
+  Pause(IDLE(0))
+
+  LIMITFORWARDINPUT(0) = -1    ' Disable forward limit switch
+
+  Pause(DRIVEENABLEREADY(_axis))
+
+  t0 = 0
+  While t0 <= _waitForDER
+    If DRIVEENABLEREADY(0) Then
+      Exit While
+    End If
+    Wait(250)
+  End While
+
+  If t0 > _waitForDER Then
+    _homeStatus.timeout = 1
+    Exit Sub
+  End If
+
+  DRIVEENABLE(0) = 1
+
+  ACCEL(_axis) = _defaultAccel
+  DECEL(_axis) = _defaultAccel
+  HOMEACCEL(_axis) = _homeAccel
+  HOMEDECEL(_axis) = _homeAccel
+  HOMESPEED(0) = _homeSpeed
+  HOMEBACKOFF(0) = 5
+
+  SPEED(_axis) = _homeSpeed / 2
+  INCR(0) = -0.5               ' First, unroll strap to ensure the forward limit switch is cleared
+  GO(0)
+
+  Pause(IDLE(0))
+
+  HOMEREFPOS(0) = _homeRefPos
+  HOME(0) = _hmPOSITIVE_SWITCH
+
+  t0 = 0
+  While t0 <= _waitForHome
+    If IDLE(0) Then
+      _homeStatus.timeout = 1
+      Exit While
+    End If
+
+    Wait(125)
+  End While
+
+  If t0 > _waitForHome Then
+    _homeStatus.timeout = 1
+    Exit Sub
+  End If
+
+  SPEED(_axis) = _defaultSpeed
+  INCA(_axis) = 0
+  GO(0)
+
+  LIMITFORWARDINPUT(0) = 1     ' Enable forward limit switch
+
+  Pause(IDLE(0))
+  SPEED(_axis) = 0
+
+  _homeStatus.homed = 1
+  _homeStatus.home_in_progress = 0
+  _homeStatus.timeout = 0
+End Sub
+
+
+
+Event NETDATA0
+  If _homeStatus.homed = 1 Then
+    If DRIVEENABLE(0) AndAlso (NETFLOAT(0) <> 0) Then
+      SPEED(_axis) = clampToMaxSpeed(NETFLOAT(0))
+      If (AXISMODE(_axis) And _mdINCREMENT) AndAlso (IDLE(_axis) <> 1) Then
+        INCA(_axis) = _lastPos
+        GO(_axis)
+      End If
+    Else
+      STOP(_axis)
+      NETFLOAT(0) = 0
+    End If
+  End If
+End Event
+
+
+
+Event NETDATA1
+  If _homeStatus.homed = 1 Then
+    If DRIVEENABLE(0) Then
+      _lastPos = NETFLOAT(1) * -1
+      INCA(_axis) = _lastPos
+      GO(_axis)
+    Else
+      STOP(_axis)
+    End If
+  End If
+End Event
+
+
+
+Event NETDATA2
+  Dim _cmd As Command
+
+  _cmd.all = NETINTEGER(2)
+
+  If (_cmd.drive_enable <> 0) Then
+    _forceDisable = 0
+    If canDriveEnable() Then DRIVEENABLE(_axis) = 1
+  Else
+    DRIVEENABLE(_axis) = 0
+    _forceDisable = 1
+  End If
+
+  If _cmd.home_command <> 0 Then
+    doHome()
+    _cmd.home_command = 0
+  End If
+
+  NETINTEGER(2) = _cmd.all
+End Event
+
+
+
+Event NETDATA3
+  If NETFLOAT(3) <> 0 Then
+    ACCEL(_axis) = NETFLOAT(3)
+  Else
+    NETFLOAT(3) = ACCEL(_axis)
+  End If
+End Event
+
+
+
+Event NETDATA4
+  If NETFLOAT(4) <> 0 Then
+    DECEL(_axis) = NETFLOAT(4)
+  Else
+    NETFLOAT(4) = DECEL(_axis)
+  End If
+End Event
+
+
+
+Event ONERROR
+  Dim nAxis As Integer
+
+  'Read the next error and handle accordingly
+  If ERRORREADNEXT(_egALL, -1) Then
+    nAxis = ERRDATA(1)
+
+    'If we have an axis error or warning
+    If (ERRCODE >= 10000) And (ERRCODE < 30000) Then
+      Select Case ERRCODE
+        Case _ecFWD_SOFT_LIMIT, _ecREV_SOFT_LIMIT
+          STOP(_axis)
+
+        Case _ecFWD_HARD_LIMIT, _ecREV_HARD_LIMIT
+          DRIVEENABLE(_axis) = 0
+          _forceDisable = 1
+
+        'Handle limits
+        Case _ecFOLLOWING_ERROR
+
+        'Pass
+        Case Else 
+          'All other errors and warnings handled here
+          DRIVEENABLE(_axis) = 0
+          _forceDisable = 1
+      End Select
+    End If
+
+    'Print errors
+    Print #_TERM2, "Error code: ", ERRCODE
+    Print #_TERM2, "Description: ", ERRSTRING
+    Print #_TERM2, "Axis (if applicable): ", ERRDATA(1)
+    Print #_TERM2, "Line number (if applicable): ", ERRLINE
+    Print #_TERM2, "Time: ", ERRTIME
+    
+    NETINTEGER(19) = ERRCODE
+
+  End If
+End Event
+
+
+
+Startup
+  NETFLOAT(0) = 0
+  NETFLOAT(1) = 0
+  NETINTEGER(2) = 0
+  ACCEL(_axis) = _defaultAccel
+  DECEL(_axis) = _defaultAccel
+
+  Auto
+End Startup
