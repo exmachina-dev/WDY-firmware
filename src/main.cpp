@@ -11,7 +11,6 @@ extern "C" {
 }
 
 #define DMX_START       0
-#define DMX_FOOTPRINT   5
 
 #define ARTNET_DEBUG
 
@@ -56,16 +55,17 @@ Thread LAN_app_thread;
 
 dmx_device_union_t DMXdevice;
 dmx_device_union_t _lastDMXdevice;
-bool new_command_sig = false;
+bool new_dmx_sig = false;
 
 // Encoder
-QEI encoder(QEI_4XCOUNT | QEI_INVERT);
+QEI encoder(QEI_INDEX); // | QEI_INVERT);
 
 // Serial
 Serial USBport(USBTX, USBRX);
 
 
 int main(void) {
+
 #if MBED_CONF_APP_MEMTRACE
     mbed_stats_heap_t heap_stats;
     mbed_mem_trace_set_callback(mbed_mem_trace_default_callback);
@@ -256,14 +256,22 @@ static void CO_app_task(void){
     float enc_position;
     float real_speed;
     float real_position;
-    float cmd_speed;
-    float cmd_position;
-    float old_position = -1;
+
+    float cmd_position = 0;
+    float cmd_speed = 0;
+    float cmd_accel = 0;
+    float cmd_decel = 0;
+    wdy_command_t cmd_command = WDY_CMD_NONE;
+
+    wdy_status_t status = WDY_STS_NONE;
 
     uint16_t homing_time = 0;
 
-    wdy_status_t status;
-    wdy_command_t command;
+    float last_position = 0;
+    float last_speed = 0;
+    float last_accel = 0;
+    float last_decel = 0;
+    wdy_command_t last_command = WDY_CMD_NONE;
 
     bdata_t nd_spd;
     bdata_t nd_pos;
@@ -275,7 +283,14 @@ static void CO_app_task(void){
     bdata_t nd_mot_spd;
     bdata_t nd_mot_pos;
 
+    bool new_cmd_sig = false;
+    bool new_spd_sig = false;
+    bool new_pos_sig = false;
+    bool new_acc_sig = false;
+    bool new_dec_sig = false;
+
     while (true) {
+        Thread::wait(WDY_LOOP_INTERVAL); // wait before to ensure this delay is always repected
 
         if(CO != NULL && CO->CANmodule[0]->CANnormal) {
 
@@ -284,103 +299,184 @@ static void CO_app_task(void){
                 CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
 
                 err = CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
-                if (err) continue;
 
                 Thread::wait(500);
 
                 err = MFE_scan(CO_DRV_NODEID, &node, 100);
-                if (err) continue;
+                if (err) {
+                    Thread::wait(500);
+                    continue;
+                }
 
                 err = MFE_connect(&node, 100);
                 printf("drive: %d\r\n", err);
 
                 CO->NMT->operatingState = CO_NMT_OPERATIONAL;
+
+                Thread::wait(50);
             }
 
             timer1msCopy = CO_timer1ms;
             timer1msPrevious = timer1msCopy;
 
-            if (new_command_sig) {                          // New DMX data
+            if (new_dmx_sig) {                          // New DMX data
                 uint16_t raw_speed = DMXdevice.parameter.speed;
                 uint16_t raw_position = DMXdevice.parameter.position;
                 uint8_t raw_command = DMXdevice.parameter.command;
+                uint8_t raw_accel = DMXdevice.parameter.accel;
+                uint8_t raw_decel = DMXdevice.parameter.decel;
 
-                map_DMX_to_world(raw_speed, &cmd_speed, WDY_MAX_SPEED);
-                map_DMX_to_world(raw_position, &cmd_position, WDY_MAX_POSITION);
-                map_DMXcommand_to_command(raw_command, &command);
+                map_DMX16_to_world(raw_speed, &cmd_speed, WDY_MAX_SPEED);
+                map_DMX16_to_world(raw_position, &cmd_position, WDY_MAX_POSITION);
+                map_DMXcommand_to_command(raw_command, &cmd_command);
 
-                printf("DMX_pos: %d\r\n", raw_position);
-                printf("REAL_pos: %f\r\n", cmd_position);
-                printf("\r\n");
+                map_DMX8_to_world(raw_accel, &cmd_accel, WDY_MAX_ACCEL);
+                map_DMX8_to_world(raw_decel, &cmd_decel, WDY_MAX_DECEL);
+
+                printf("DMX cmd %d\t pos %d spd %d acc %d dec %d\r\n",
+                      raw_command, raw_position, raw_speed, raw_accel, raw_decel);
+                printf("REAL cmd %d\t pos %f spd %f acc %f dec %f\r\n",
+                      cmd_command, cmd_position, cmd_speed, cmd_accel, cmd_decel);
+
+                new_dmx_sig = false;                    // Reset signal
+
+                new_cmd_sig = (last_command != cmd_command);
+                new_pos_sig = (last_position != cmd_position);
+                new_spd_sig = (last_speed != cmd_speed);
+                new_acc_sig = (last_accel != cmd_accel);
+                new_dec_sig = (last_decel != cmd_decel);
+            }
 
 
-                printf("DMX_spd: %d\r\n", raw_speed);
-                printf("REAL_spd: %f\r\n", cmd_speed);
-                printf("--\r\n");
+            // Update drive status
+            if (!(status & WDY_STS_COMM_FAULT)) {
+                err = MFE_get_status(&node, &nd_sts);
+                if (err != 0) {
+                    printf("get sts: %d\r\n", err);
+                    status = WDY_STS_COMM_FAULT;
+                    continue;
+                }
+            }
 
-                new_command_sig = false;                    // Reset signal
+
+
+            if (new_cmd_sig) {
+                printf("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
+
+                if (cmd_command == WDY_CMD_ENABLE) {
+                    nd_cmd.to_int = WDY_CMD_ENABLE;
+                    err = MFE_set_command(&node, &nd_cmd);
+                }
+                else if (cmd_command == WDY_CMD_HOME) {
+                    nd_cmd.to_int = WDY_CMD_HOME;
+                    err = MFE_set_command(&node, &nd_cmd);
+
+                    status = WDY_STS_HOME_IN_PROGRESS;
+                }
+                else if (cmd_command == WDY_CMD_HOME_ENCODER) {
+                    encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Reset encoder position
+                }
+                else {  // WDY_CMD_NONE
+                    nd_cmd.to_int = WDY_CMD_NONE;
+                    err = MFE_set_command(&node, &nd_cmd);
+                    if (err != 0) {
+                        status = WDY_STS_COMM_FAULT;
+                        continue;
+                    }
+                }
+
+                if (err != 0) {
+                    status = WDY_STS_COMM_FAULT;
+                    continue;
+                }
+            }
+
+            if (new_acc_sig) {
+                nd_accel.to_float = linear_to_rot(cmd_accel, length_to_drum_diameter(WDY_MAX_POSITION));
+                err = MFE_set_accel(&node, &nd_accel);
+            }
+
+            if (new_dec_sig) {
+                nd_decel.to_float = linear_to_rot(cmd_decel, length_to_drum_diameter(WDY_MAX_POSITION));
+                err += MFE_set_decel(&node, &nd_decel);
             }
 
 
             // Control loop of speed and position regarding external encoder
-            if (command == WDY_CMD_ENABLE && status == WDY_STS_HOMED) {     // Normal loop
+            if (cmd_command == WDY_CMD_ENABLE && status == WDY_STS_HOMED) {     // Normal loop
+
                 // First, get real position from encoder
                 enc_position = encoder.getPosition();
 
                 // Compute actual speed according to position
-                nd_spd.to_float = linear_speed_to_rps(cmd_speed, length_to_drum_diameter(enc_position));
-                MFE_set_speed(&node, &nd_spd);
-
-                if (old_position != cmd_position) {         // New position required
-                    nd_pos.to_float = length_to_drum_turns(cmd_position); // Position: real to turn
-                    MFE_set_position(&node, &nd_pos);
-                    old_position = cmd_position;
-                }
-            }
-            else if (status == WDY_STS_HOME_IN_PROGRESS) { // Homing in progress
-                err = MFE_get_status(&node, &nd_sts);
-                if (err != 0)
+                nd_spd.to_float = linear_to_rot(cmd_speed, length_to_drum_diameter(enc_position));
+                err = MFE_set_speed(&node, &nd_spd);
+                if (err != 0) {
                     status = WDY_STS_COMM_FAULT;
+                    continue;
+                }
 
-                if (nd_sts.to_int && WDY_STS_HOME_IN_PROGRESS) {
+                if (new_pos_sig) {         // New position required
+                    nd_pos.to_float = length_to_drum_turns(cmd_position); // Position: real to turn
+                    err = MFE_set_position(&node, &nd_pos);
+
+                    if (err != 0) {
+                        status = WDY_STS_COMM_FAULT;
+                        continue;
+                    }
+
+                }
+
+                printf("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
+                       nd_sts.to_int, nd_spd.to_float, nd_pos.to_float, encoder.getSpeed(), enc_position);
+            }
+            else if (status == WDY_STS_HOME_IN_PROGRESS) {      // Homing in progress
+                if (nd_sts.to_int & WDY_STS_HOME_IN_PROGRESS) {
                     status = WDY_STS_HOME_IN_PROGRESS;
                     homing_time++;
                 }
-                else if (nd_sts.to_int && WDY_STS_HOMED) {
+                else if (nd_sts.to_int & WDY_STS_HOMED) {
                     encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Once the drive is homed, reset encoder position
 
+                    status = WDY_STS_HOMED;
+
                     // Set defaults
-                    nd_accel.to_int = WDY_DEFAULT_ACCEL;
-                    nd_decel.to_int = WDY_DEFAULT_DECEL;
+                    nd_accel.to_float = linear_to_rot(
+                            WDY_DEFAULT_ACCEL, length_to_drum_diameter(WDY_MAX_POSITION));
+                    nd_decel.to_float = linear_to_rot(
+                            WDY_DEFAULT_DECEL, length_to_drum_diameter(WDY_MAX_POSITION));
                     err = MFE_set_accel(&node, &nd_accel);
                     err += MFE_set_decel(&node, &nd_decel);
 
-                    if (err == 0) {
-                        status = WDY_STS_HOMED;
+                    homing_time = 0;
+                }
+                else if (homing_time > (WDY_MAX_HOMING_TIME / WDY_LOOP_INTERVAL)) {
+                    homing_time = 0;
+
+                    if (nd_sts.to_int & WDY_STS_UNPOWERED) {
+                        status = WDY_STS_UNPOWERED;
                     } else {
-                        status = WDY_STS_COMM_FAULT;
+                        status = WDY_STS_NONE;
                     }
                 }
             }
-            else if (command == WDY_CMD_HOME) {     // Home command issued
-                status = WDY_STS_HOME_IN_PROGRESS;
 
-                nd_cmd.to_int = WDY_CMD_HOME;
-                err = MFE_set_command(&node, &nd_cmd);
-                if (err != 0) {
-                    status = WDY_STS_COMM_FAULT;
-                }
-            }
-            else {                                  // Stop by default
-                nd_cmd.to_int = WDY_CMD_NONE;
-                err = MFE_set_command(&node, &nd_cmd);
-                if (err != 0) {
-                    status = WDY_STS_COMM_FAULT;
-                }
-            }
+            // store commands
+            last_position = cmd_position;
+            last_speed = cmd_speed;
+            last_command = cmd_command;
+            last_accel = cmd_accel;
+            last_decel = cmd_decel;
+
+            // reset signals
+            new_cmd_sig = false;
+            new_pos_sig = false;
+            new_spd_sig = false;
+            new_acc_sig = false;
+            new_dec_sig = false;
 
             timerTempDiff = timer1msCopy - timerTempPrevious;
-            if (timerTempDiff >= 500) {             // Adjust temperature according to drive temperature
+            if (timerTempDiff >= 500) {     // Adjust temperature according to drive temperature
                 err = MFE_get_temp(&node, &nd_temp);
                 if (err == 0) {
                     bdata_t _temp;
@@ -403,10 +499,7 @@ static void CO_app_task(void){
             printf("Waiting for CAN.\r\n");
             Thread::wait(1000);
         }
-
-        Thread::wait(10);
     }
-
 }
 
 // Sync task
@@ -582,7 +675,6 @@ static void LAN_app_task(void) {
 }
 
 void _dmx_cb(uint16_t port, uint8_t *dmx_data) {
-    memcpy(&_lastDMXdevice.data, &DMXdevice.data, DMX_FOOTPRINT);
 
     memcpy(&DMXdevice.data, dmx_data, DMX_FOOTPRINT);
     DMXdevice.parameter.speed = swapBytes16(DMXdevice.parameter.speed);
@@ -591,14 +683,8 @@ void _dmx_cb(uint16_t port, uint8_t *dmx_data) {
     led3 = (float)DMXdevice.parameter.speed / 0xFFFF;
     led4 = (float)DMXdevice.parameter.position / 0xFFFF;
 
-    if (
-            _lastDMXdevice.parameter.speed != DMXdevice.parameter.speed ||
-            _lastDMXdevice.parameter.position != DMXdevice.parameter.position ||
-            _lastDMXdevice.parameter.command != DMXdevice.parameter.command) {
-        _lastDMXdevice.parameter.position = DMXdevice.parameter.position;
-        _lastDMXdevice.parameter.speed = DMXdevice.parameter.speed;
-        _lastDMXdevice.parameter.command = DMXdevice.parameter.command;
-        printf("New cmd.\r\n");
-        new_command_sig = true;
+    if (memcmp(&_lastDMXdevice.data, &DMXdevice.data, DMX_FOOTPRINT)) {
+        memcpy(&_lastDMXdevice.data, &DMXdevice.data, DMX_FOOTPRINT);
+        new_dmx_sig = true;
     }
 }

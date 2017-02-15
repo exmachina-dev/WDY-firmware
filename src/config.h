@@ -27,6 +27,8 @@
 #define WDY_SHORT_NAME  "WDY3000"
 #define WDY_LONG_NAME   "Winch Dynamic by ExMachina"
 
+#define WDY_LOOP_INTERVAL        10      // ms
+
 // Physic constants
 // ----------------
 #define WDY_STRAP_LENGTH        30000   // mm
@@ -38,14 +40,19 @@
 
 #define WDY_GEARBOX_RATIO       6       // The gearbox ratio between the motor and the drum
 
-#define WDY_DEFAULT_ACCEL       1
-#define WDY_DEFAULT_DECEL       1
+#define WDY_DEFAULT_ACCEL       500     // mm.s-1
+#define WDY_DEFAULT_DECEL       500     // mm.s-1
 
 // Limits
 // ------
 #define WDY_MAX_SPEED           3000    // mm.s
 #define WDY_MAX_POSITION        WDY_STRAP_LENGTH
 #define WDY_MIN_POSITION        0
+
+#define WDY_MAX_ACCEL           3000    // mm.s-1
+#define WDY_MAX_DECEL           3000    // mm.s-1
+
+#define WDY_MAX_HOMING_TIME     20000   // ms
 
 
 // Encoder
@@ -58,7 +65,7 @@
 // This the factor in order to convert rps to mm/s
 #define WDY_ENCODER_FACTOR      (WDY_STRAP_THICKNESS + WDY_ENCODER_WHEEL_DIA) * WDY_PI
 
-#define WDY_ENCODER_HOME_OFFSET 0
+#define WDY_ENCODER_HOME_OFFSET 0.0
 
 #define WDY_INVERT_POSITION     1
 

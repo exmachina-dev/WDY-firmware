@@ -10,10 +10,20 @@
 #define _S_THK          WDY_STRAP_THICKNESS
 #define _D_DIA          WDY_DRUM_CORE_DIA
 
-uint8_t map_DMX_to_world(uint16_t DMXvalue, float *mvalue, int maxValue) {
+uint8_t map_DMX16_to_world(uint16_t DMXvalue, float *mvalue, int maxValue) {
     float _value;
 
-    _value = (float)(DMXvalue / (float)DMX_MAX_VALUE) * (float)maxValue;
+    _value = (float)(DMXvalue / (float)DMX_MAX_VALUE16) * (float)maxValue;
+
+    memcpy(mvalue, &_value, sizeof(float));
+
+    return 0;
+}
+
+uint8_t map_DMX8_to_world(uint8_t DMXvalue, float *mvalue, int maxValue) {
+    float _value;
+
+    _value = (float)(DMXvalue / (float)DMX_MAX_VALUE8) * (float)maxValue;
 
     memcpy(mvalue, &_value, sizeof(float));
 
@@ -23,7 +33,7 @@ uint8_t map_DMX_to_world(uint16_t DMXvalue, float *mvalue, int maxValue) {
 uint8_t map_DMXcommand_to_command(uint8_t DMXcommand, wdy_command_t *mcommand) {
     wdy_command_t _cmd;
 
-    _cmd = (wdy_command_t)(DMXcommand % 10);
+    _cmd = (wdy_command_t)(DMXcommand / 16);
 
     memcpy(mcommand, &_cmd, sizeof(uint8_t));
 
@@ -34,7 +44,7 @@ float length_to_drum_turns(float length) {
     float Nturns;
 
     Nturns = (_S_THK - _D_DIA + sqrt(
-                pow(_D_DIA - _S_THK, 2) + ((4 * _S_THK * length) / _PI))) /
+                pow(_D_DIA - _S_THK, 2) + ((4 * _S_THK * (length)) / _PI))) /
         (2 * _S_THK);
 
     return Nturns;
@@ -48,16 +58,16 @@ float length_to_drum_diameter(float length) {
     return Ddiameter;
 }
 
-float linear_speed_to_rps(float lspeed, float diameter) {
+float linear_to_rot(float lvalue, float diameter) {
     float perimeter;
-    float rps;
+    float rot;
 
     perimeter = diameter * _PI;
-    rps = lspeed / perimeter;
+    rot = lvalue / perimeter;
 
 #ifdef WDY_GEARBOX_RATIO
-    return rps * WDY_GEARBOX_RATIO;
+    return rot * WDY_GEARBOX_RATIO;
 #else
-    return rps;
+    return rot;
 #endif
 }

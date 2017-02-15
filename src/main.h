@@ -21,6 +21,8 @@
 #include "LAN_common.h"
 #include "LAN_packets.h"
 
+#define DMX_FOOTPRINT   7
+
 /* CANopen includes */
 
 #define CO_HAVE_CONFIG // Tell CANopenNode we have a custom config file
@@ -48,12 +50,14 @@ struct dmx_device_parameter_s {
     uint8_t command;
     uint16_t position;
     uint16_t speed;
+    uint8_t accel;
+    uint8_t decel;
 } __attribute__((packed));
 
 typedef struct dmx_device_parameter_s dmx_device_parameter_t;
 
 typedef union {
-    uint8_t data[5];
+    uint8_t data[DMX_FOOTPRINT];
     dmx_device_parameter_t parameter;
 } dmx_device_union_t;
 
