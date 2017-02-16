@@ -52,7 +52,7 @@
 #define WDY_MAX_ACCEL           3000    // mm.s-1
 #define WDY_MAX_DECEL           3000    // mm.s-1
 
-#define WDY_MAX_HOMING_TIME     20000   // ms
+#define WDY_MAX_HOMING_TIME     35000   // ms
 
 
 // Encoder
