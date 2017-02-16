@@ -44,6 +44,8 @@ extern "C" {
 #include "CO_CAN.h"
 }
 
+bool _flipbit = 0;
+
 uint8_t MFE_scan(uint8_t remoteNodeId, MFEnode_t *node, uint16_t timeoutTime) {
     uint8_t err = 0;
 
@@ -173,6 +175,8 @@ uint8_t MFE_set_position(MFEnode_t *node, bdata_t *dataTx) {
 }
 
 uint8_t MFE_set_command(MFEnode_t *node, bdata_t *dataTx) {
+    _flipbit ^= 1;
+    dataTx->to_int |= _flipbit << MFE_FLIP_BIT;
     return MFE_write_netdata(node, MFE_ND_COMMAND, dataTx, MFE_TIMEOUT);
 }
 

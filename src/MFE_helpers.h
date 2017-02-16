@@ -105,6 +105,8 @@ enum MFE_netdata {
     MFE_ND_TEMP_STS =           20
 };
 
+#define MFE_FLIP_BIT            (1 << 4)
+
 typedef struct {
     uint8_t  nodeId;
     uint32_t deviceType;
