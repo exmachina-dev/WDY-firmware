@@ -3,6 +3,7 @@ Bitfield Command
   all As 0 To 31
   drive_enable As 0
   home_command As 1
+  clear_errors As 2
   flip_bit As 3
 End Bitfield
 
@@ -244,6 +245,11 @@ Event NETDATA2
   If _cmd.home_command <> 0 Then
     doHome()
     _cmd.home_command = 0
+  End If
+
+  If _cmd.clear_errors <> 0 Then
+    NETINTEGER(19) = 0
+    _cmd.clear_errors = 0
   End If
 
   NETINTEGER(2) = _cmd.all

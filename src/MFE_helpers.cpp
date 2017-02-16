@@ -196,6 +196,10 @@ uint8_t MFE_get_status(MFEnode_t *node, bdata_t *dataRx) {
     return MFE_read_netdata(node, MFE_ND_STATUS, dataRx, MFE_TIMEOUT);
 }
 
+uint8_t MFE_get_errcode(MFEnode_t *node, bdata_t *dataRx) {
+    return MFE_read_netdata(node, MFE_ND_ERRCODE_STS, dataRx, MFE_TIMEOUT);
+}
+
 uint8_t MFE_get_temp(MFEnode_t *node, bdata_t *dataRx) {
     return MFE_read_netdata(node, MFE_ND_TEMP_STS, dataRx, MFE_TIMEOUT);
 }

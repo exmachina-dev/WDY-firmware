@@ -101,6 +101,7 @@ enum MFE_netdata {
     MFE_ND_SPEED_STS =          5,
     MFE_ND_POSITION_STS =       6,
     MFE_ND_STATUS =             7,
+    MFE_ND_ERRCODE_STS =        19,
     MFE_ND_TEMP_STS =           20
 };
 
