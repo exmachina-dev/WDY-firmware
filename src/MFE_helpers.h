@@ -91,6 +91,15 @@ enum MFE_index_enum {
     MFE_index_NetDataArray_4                      = 0x3F03
 };
 
+
+typedef struct {
+    uint8_t  nodeId;
+    uint32_t deviceType;
+    uint32_t vendorID;
+    uint32_t revNo;
+    uint32_t serialNo;
+} MFEnode_t;
+
 enum MFE_netdata {
     MFE_ND_SPEED_CMD =          0,
     MFE_ND_POSITION_CMD =       1,
@@ -105,15 +114,31 @@ enum MFE_netdata {
     MFE_ND_TEMP_STS =           20
 };
 
-#define MFE_FLIP_BIT            (1 << 4)
+enum MFE_command {
+    MFE_CMD_NONE =              0x00,
+    MFE_CMD_ENABLE =            0x01,
+    MFE_CMD_HOME =              0x02,
+    MFE_CMD_CLEAR_ERRORS =      0x04,
+    MFE_CMD_FLIP_BIT =          0x08,
+};
 
-typedef struct {
-    uint8_t  nodeId;
-    uint32_t deviceType;
-    uint32_t vendorID;
-    uint32_t revNo;
-    uint32_t serialNo;
-} MFEnode_t;
+enum MFE_status {
+    MFE_STS_NONE =              0x0000,
+    MFE_STS_ENABLED =           0x0001,
+    MFE_STS_HOMED =             0x0002,
+    MFE_STS_HOME_IN_PROGRESS =  0x0004,
+    MFE_STS_HOME_TIMEOUT =      0x0008,
+    MFE_STS_BRAKE_ACTIVE =      0x0010,
+    MFE_STS_SOFT_LIMIT_FW =     0x0020,
+    MFE_STS_SOFT_LIMIT_RW =     0x0040,
+    MFE_STS_HARD_LIMIT_FW =     0x0080,
+    MFE_STS_HARD_LIMIT_RW =     0x0100,
+    MFE_STS_IS_IDLE =           0x0200,
+    MFE_STS_UNPOWERED =         0x0400,
+    MFE_STS_COMM_FAULT =        0x0800,
+    MFE_STS_FLIP_BIT =          0x1000,
+};
+
 
 uint8_t MFE_scan(uint8_t remoteNodeId, MFEnode_t *node, uint16_t timeoutTime);
 

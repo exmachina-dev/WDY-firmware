@@ -13,8 +13,8 @@ typedef enum {
     WDY_CMD_NONE =              0x00,
     WDY_CMD_ENABLE =            0x01,
     WDY_CMD_HOME =              0x02,
-    WDY_CMD_CLEAR_ERRORS =      0x04,
-    WDY_CMD_HOME_ENCODER =      0x08,
+    WDY_CMD_HOME_ENCODER =      0x04,
+    WDY_CMD_CLEAR_ERRORS =      0x08,
     WDY_CMD_RESET =             0x80,
 } wdy_command_t;
 

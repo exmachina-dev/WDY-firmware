@@ -176,7 +176,7 @@ uint8_t MFE_set_position(MFEnode_t *node, bdata_t *dataTx) {
 
 uint8_t MFE_set_command(MFEnode_t *node, bdata_t *dataTx) {
     _flipbit ^= 1;
-    dataTx->to_int |= _flipbit << MFE_FLIP_BIT;
+    dataTx->to_int |= _flipbit << MFE_CMD_FLIP_BIT;
     return MFE_write_netdata(node, MFE_ND_COMMAND, dataTx, MFE_TIMEOUT);
 }
 

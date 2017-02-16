@@ -349,7 +349,7 @@ static void CO_app_task(void){
 
 
             // Update drive status
-            if (!(status & WDY_STS_COMM_FAULT)) {
+            if (!(status & MFE_STS_COMM_FAULT)) {
                 err = MFE_get_status(&node, &nd_sts);
                 if (err != 0) {
                     printf("get sts: %d\r\n", err);
@@ -364,11 +364,11 @@ static void CO_app_task(void){
                 printf("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
 
                 if (cmd_command == WDY_CMD_ENABLE) {
-                    nd_cmd.to_int = WDY_CMD_ENABLE;
+                    nd_cmd.to_int = MFE_CMD_ENABLE;
                     err = MFE_set_command(&node, &nd_cmd);
                 }
                 else if (cmd_command == WDY_CMD_HOME) {
-                    nd_cmd.to_int = WDY_CMD_HOME;
+                    nd_cmd.to_int = MFE_CMD_HOME;
                     err = MFE_set_command(&node, &nd_cmd);
 
                     status = WDY_STS_HOME_IN_PROGRESS;
@@ -377,7 +377,7 @@ static void CO_app_task(void){
                     encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Reset encoder position
                 }
                 else {  // WDY_CMD_NONE
-                    nd_cmd.to_int = WDY_CMD_NONE;
+                    nd_cmd.to_int = MFE_CMD_NONE;
                     err = MFE_set_command(&node, &nd_cmd);
                     if (err != 0) {
                         status = WDY_STS_COMM_FAULT;
@@ -431,11 +431,11 @@ static void CO_app_task(void){
                        nd_sts.to_int, nd_spd.to_float, nd_pos.to_float, encoder.getSpeed(), enc_position);
             }
             else if (status == WDY_STS_HOME_IN_PROGRESS) {      // Homing in progress
-                if (nd_sts.to_int & WDY_STS_HOME_IN_PROGRESS) {
+                if (nd_sts.to_int & MFE_STS_HOME_IN_PROGRESS) {
                     status = WDY_STS_HOME_IN_PROGRESS;
                     homing_time++;
                 }
-                else if (nd_sts.to_int & WDY_STS_HOMED) {
+                else if (nd_sts.to_int & MFE_STS_HOMED) {
                     encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Once the drive is homed, reset encoder position
 
                     status = WDY_STS_HOMED;
@@ -453,13 +453,13 @@ static void CO_app_task(void){
                 else if (homing_time > (WDY_MAX_HOMING_TIME / WDY_LOOP_INTERVAL)) {
                     homing_time = 0;
 
-                    if (nd_sts.to_int & WDY_STS_UNPOWERED) {
+                    if (nd_sts.to_int & MFE_STS_UNPOWERED) {
                         status = WDY_STS_UNPOWERED;
                     } else {
                         status = WDY_STS_HOME_TIMEOUT;
                     }
                 }
-                else if (nd_sts.to_int & WDY_STS_HOME_TIMEOUT) {
+                else if (nd_sts.to_int & MFE_STS_HOME_TIMEOUT) {
                     status = WDY_STS_HOME_TIMEOUT;
                 }
             }
