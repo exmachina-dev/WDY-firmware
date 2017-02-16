@@ -456,8 +456,11 @@ static void CO_app_task(void){
                     if (nd_sts.to_int & WDY_STS_UNPOWERED) {
                         status = WDY_STS_UNPOWERED;
                     } else {
-                        status = WDY_STS_NONE;
+                        status = WDY_STS_HOME_TIMEOUT;
                     }
+                }
+                else if (nd_sts.to_int & WDY_STS_HOME_TIMEOUT) {
+                    status = WDY_STS_HOME_TIMEOUT;
                 }
             }
 
