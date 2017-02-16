@@ -111,8 +111,8 @@ typedef struct {
     uint8_t  nodeId;
     uint32_t deviceType;
     uint32_t vendorID;
-    uint32_t revNo;  
-    uint32_t serialNo;  
+    uint32_t revNo;
+    uint32_t serialNo;
 } MFEnode_t;
 
 uint8_t MFE_scan(uint8_t remoteNodeId, MFEnode_t *node, uint16_t timeoutTime);
