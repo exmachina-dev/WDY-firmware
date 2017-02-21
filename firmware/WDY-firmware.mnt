@@ -292,8 +292,7 @@ Event ONERROR
           STOP(_axis)
 
         Case _ecFWD_HARD_LIMIT, _ecREV_HARD_LIMIT
-          DRIVEENABLE(_axis) = 0
-          _forceDisable = 1
+          STOP(_axis)
 
         'Handle limits
         Case _ecFOLLOWING_ERROR
