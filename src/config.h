@@ -1,6 +1,10 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+// Math constants
+// --------------
+#define WDY_PI                  3.1415926535
+
 // LightArtNET config
 // =============
 
@@ -27,7 +31,7 @@
 #define WDY_SHORT_NAME  "WDY3000"
 #define WDY_LONG_NAME   "Winch Dynamic by ExMachina"
 
-#define WDY_LOOP_INTERVAL        10      // ms
+#define WDY_LOOP_INTERVAL       10      // ms
 
 #define WDY_COMMAND_SLOTS       16      // divide 255 by 16
 #define WDY_INVERT_POS_COMMAND  true    // invert position
@@ -73,9 +77,5 @@
 #define WDY_ENCODER_HOME_OFFSET 0.0
 
 #define WDY_INVERT_POSITION     1
-
-// Math constants
-// --------------
-#define WDY_PI                  3.1415926535
 
 #endif
