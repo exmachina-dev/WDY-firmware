@@ -417,8 +417,8 @@ static void CO_app_task(void){
                     continue;
                 }
 
-                if (new_pos_sig) {         // New position required
-                    nd_pos.to_float = length_to_drum_turns(cmd_position); // Position: real to turn
+                if (new_pos_sig || new_spd_sig) {                       // New position required
+                    nd_pos.to_float = length_to_drum_turns(cmd_position); // Position: real to turns
                     err = MFE_set_position(&node, &nd_pos);
 
                     if (err != 0) {
