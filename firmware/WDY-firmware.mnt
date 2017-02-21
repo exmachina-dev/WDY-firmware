@@ -54,7 +54,7 @@ Run(updateStatus)
 
 Loop
   NETFLOAT(5) = VEL(_axis)
-  NETFLOAT(6) = POS(_axis)
+  NETFLOAT(6) = POS(_axis) * -1
 
   If canDriveEnable() AndAlso (DRIVEENABLE(_axis) = 0) Then
     DRIVEENABLE(_axis) = 1
