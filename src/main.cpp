@@ -58,7 +58,7 @@ dmx_device_union_t _lastDMXdevice;
 bool new_dmx_sig = false;
 
 // Encoder
-QEI encoder(QEI_INDEX); // | QEI_INVERT);
+QEI encoder(QEI_INVERT);
 
 // Serial
 Serial USBport(USBTX, USBRX);
@@ -253,7 +253,8 @@ static void CO_app_task(void){
 
     MFEnode_t   node;
 
-    float enc_position;
+    float enc_position = 0;
+    float enc_speed = 0;
     float real_speed;
     float real_position;
 
@@ -462,6 +463,10 @@ static void CO_app_task(void){
                 else if (nd_sts.to_int & MFE_STS_HOME_TIMEOUT) {
                     status = WDY_STS_HOME_TIMEOUT;
                 }
+            } else {
+                enc_position = encoder.getPosition();
+                enc_speed = encoder.getSpeed();
+                printf("ENC mspd %f mpos %f\r\n", enc_speed, enc_position);
             }
 
             // store commands
