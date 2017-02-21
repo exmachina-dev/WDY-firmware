@@ -418,7 +418,11 @@ static void CO_app_task(void){
                 }
 
                 if (new_pos_sig || new_spd_sig) {                       // New position required
+#ifdef WDY_GEARBOX_RATIO
+                    nd_pos.to_float = length_to_drum_turns(cmd_position) * WDY_GEARBOX_RATIO; // Position: real to turns
+#else
                     nd_pos.to_float = length_to_drum_turns(cmd_position); // Position: real to turns
+#endif
                     err = MFE_set_position(&node, &nd_pos);
 
                     if (err != 0) {
