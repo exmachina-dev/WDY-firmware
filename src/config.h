@@ -29,6 +29,8 @@
 
 #define WDY_LOOP_INTERVAL        10      // ms
 
+#define WDY_COMMAND_SLOTS       16      // divide 255 by 16
+
 // Physic constants
 // ----------------
 #define WDY_STRAP_LENGTH        30000   // mm

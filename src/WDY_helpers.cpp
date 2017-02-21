@@ -33,7 +33,7 @@ uint8_t map_DMX8_to_world(uint8_t DMXvalue, float *mvalue, int maxValue) {
 uint8_t map_DMXcommand_to_command(uint8_t DMXcommand, wdy_command_t *mcommand) {
     wdy_command_t _cmd;
 
-    _cmd = (wdy_command_t)(DMXcommand / 16);
+    _cmd = (wdy_command_t)(DMXcommand / WDY_COMMAND_SLOTS);
 
     memcpy(mcommand, &_cmd, sizeof(uint8_t));
 
