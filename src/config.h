@@ -45,6 +45,7 @@
                                         // rolled up onto the drum
 #define WDY_DRUM_CORE_DIA       120 + (WDY_DRUM_OFFSET_TURNS * 2 * WDY_STRAP_THICKNESS)      // mm
 
+#define WDY_STRAP_DEAD_OFFSET   765     // mm - This is the length always rolled up onto the drum
 #define WDY_STRAP_FIXED_OFFSET  428     // mm - This is the length of the strap path
 
 #define WDY_GEARBOX_RATIO       6       // The gearbox ratio between the motor and the drum
@@ -66,9 +67,11 @@
 
 // Encoder
 // -------
-#define WDY_ENCODER_VFQ         (10)    // Lower value means the speed is calculated over a longer time interval
-                                        //     This may help reduce noise
-#define WDY_ENCODER_PPR         2000    // 500ppr * 4 edges
+#define WDY_ENCODER_VFQ         (30)    // Lower value means the speed is
+                                        // calculated over a longer time interval
+                                        // This may help reduce noise
+
+#define WDY_ENCODER_PPR         1000    // 500ppr * 4 edges
 #define WDY_ENCODER_WHEEL_DIA   16.6    // mm
 
 // This the factor in order to convert rps to mm/s
