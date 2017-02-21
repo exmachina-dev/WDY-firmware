@@ -364,24 +364,20 @@ static void CO_app_task(void){
             }
 
 
-
             if (new_cmd_sig) {
                 printf("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
 
                 if (cmd_command == WDY_CMD_ENABLE) {
                     nd_cmd.to_int = MFE_CMD_ENABLE;
                     err = MFE_set_command(&node, &nd_cmd);
-                }
-                else if (cmd_command == WDY_CMD_HOME) {
+                } else if (cmd_command == WDY_CMD_HOME) {
                     nd_cmd.to_int = MFE_CMD_HOME;
                     err = MFE_set_command(&node, &nd_cmd);
 
                     status = WDY_STS_HOME_IN_PROGRESS;
-                }
-                else if (cmd_command == WDY_CMD_HOME_ENCODER) {
+                } else if (cmd_command == WDY_CMD_HOME_ENCODER) {
                     encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Reset encoder position
-                }
-                else {  // WDY_CMD_NONE
+                } else {  // WDY_CMD_NONE
                     nd_cmd.to_int = MFE_CMD_NONE;
                     err = MFE_set_command(&node, &nd_cmd);
                     if (err != 0) {
@@ -433,14 +429,16 @@ static void CO_app_task(void){
                 }
 
                 printf("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
-                       nd_sts.to_int, nd_spd.to_float, nd_pos.to_float, encoder.getSpeed(), enc_position);
-            }
-            else if (status == WDY_STS_HOME_IN_PROGRESS) {      // Homing in progress
+                       status, nd_spd.to_float, nd_pos.to_float, encoder.getSpeed(), enc_position);
+            } else if (status == WDY_STS_HOME_IN_PROGRESS) {      // Homing in progress
                 if (nd_sts.to_int & MFE_STS_HOME_IN_PROGRESS) {
                     status = WDY_STS_HOME_IN_PROGRESS;
                     homing_time++;
-                }
-                else if (nd_sts.to_int & MFE_STS_HOMED) {
+
+                    printf("HOM htime %d inprogress\r\n", homing_time);
+                } else if (nd_sts.to_int & MFE_STS_HOMED) {
+                    Thread::wait(100);
+
                     encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Once the drive is homed, reset encoder position
 
                     status = WDY_STS_HOMED;
@@ -453,9 +451,12 @@ static void CO_app_task(void){
                     err = MFE_set_accel(&node, &nd_accel);
                     err += MFE_set_decel(&node, &nd_decel);
 
+                    printf("HOM htime %d done\r\n", homing_time);
+
                     homing_time = 0;
-                }
-                else if (homing_time > (WDY_MAX_HOMING_TIME / WDY_LOOP_INTERVAL)) {
+                } else if (homing_time > (WDY_MAX_HOMING_TIME / WDY_LOOP_INTERVAL)) {
+                    printf("HOM htime %d timeout\r\n", homing_time);
+
                     homing_time = 0;
 
                     if (nd_sts.to_int & MFE_STS_UNPOWERED) {
@@ -463,8 +464,9 @@ static void CO_app_task(void){
                     } else {
                         status = WDY_STS_HOME_TIMEOUT;
                     }
-                }
-                else if (nd_sts.to_int & MFE_STS_HOME_TIMEOUT) {
+                } else if (nd_sts.to_int & MFE_STS_HOME_TIMEOUT) {
+                    printf("HOM htime %d timeout\r\n", homing_time);
+
                     status = WDY_STS_HOME_TIMEOUT;
                 }
             } else {
@@ -496,7 +498,7 @@ static void CO_app_task(void){
 
                     fan_top = 0.35 + (float)((_temp.to_float / 50.0) * 0.65);
                     fan_bot = 0.35 + (float)((_temp.to_float / 50.0) * 0.65);
-
+                    printf("TEMP tmp %f f1 %f f2 %f\r\n", _temp.to_float, (float) fan_top, (float) fan_bot);
                 } else {
                     fan_top = 1.0;
                     fan_bot = 1.0;
@@ -570,8 +572,7 @@ static void LAN_app_task(void) {
                 uint8_t bytes[6];
                 if( 6 == sscanf(LAN_eth->get_mac_address(), "%x:%x:%x:%x:%x:%x",
                             &values[0], &values[1], &values[2],
-                            &values[3], &values[4], &values[5] ) )
-                {
+                            &values[3], &values[4], &values[5] ) ) {
                     /* convert to uint8_t */
                     for(uint8_t i = 0; i < 6; ++i )
                         bytes[i] = (uint8_t) values[i];
