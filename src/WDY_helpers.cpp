@@ -46,7 +46,7 @@ float length_to_drum_turns(float length) {
     Nturns = (_S_THK - _D_DIA + sqrt(
                 pow(_D_DIA - _S_THK, 2) + ((4 * _S_THK * (
                             (WDY_MAX_POSITION - length))) / _PI))) /
-        (2 * _S_THK) + WDY_DRUM_OFFSET_TURNS;
+        (2 * _S_THK);
 
     return Nturns;
 }
