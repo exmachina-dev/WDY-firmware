@@ -18,25 +18,31 @@ import matplotlib.animation as animation
 # plot class
 class SerialPlotter:
     # constr
-    def __init__(self, strPort, baud, nb_axis, maxLen):
+    def __init__(self, **kwargs):
         # open serial port
-        self.ser = serial.Serial(strPort, baud)
+        self.ser = serial.Serial(kwargs['port'], kwargs['baud'])
 
-        self.ax = deque([0.0]*maxLen)
+        self.sample_length = kwargs.get('sample_length', 10)
+
+        self.ax = deque([0.0] * self.sample_length)
 
         self.ay = list()
-        for i in range(nb_axis):
-            self.ay.append(deque([0.0]*maxLen))
+        self.nb_axis = kwargs.get('nb_axis', 1)
+        for i in range(self.nb_axis):
+            self.ay.append(deque([0.0] * self.sample_length))
 
-        self.maxLen = maxLen
 
-        self.filter_str = b'D'
-        self.packet_length = 6
-        self.ignore_fields = []
+        self.filter_str = kwargs.get('filter_str', None)
+        self.packet_length = kwargs.get('packet_length', 1)
+
+        self.fields = kwargs.get('fields', range(self.nb_axis))
+        self.sample_index = 0
+
+        self._buffer = b''
 
     # add to buffer
     def addToBuf(self, buf, val):
-        if len(buf) < self.maxLen:
+        if len(buf) < self.sample_length:
             buf.append(val)
         else:
             buf.pop()
@@ -44,34 +50,54 @@ class SerialPlotter:
 
     # add data
     def add(self, data):
-        self.addToBuf(self.ax, data[1])
+        self.sample_index += 1
+        self.addToBuf(self.ax, self.sample_index)
 
-        for i, d in enumerate(data[1::2]):
-            if i not in self.ignore_fields:
-                self.addToBuf(self.ay[i], d)
+        for i, f in enumerate(self.fields):
+            self.addToBuf(self.ay[i], data[f])
 
     # update plot
     def update(self, frameNum, ax, ay):
         try:
-            self.ser.flush()
-            line = self.ser.readline()
-            data = line.split()
-            if len(data) == self.packet_length:
-                check, *data = data
-                if check == self.filter_str:
-                    self.add(data)
-                    #ax.set_data(range(self.maxLen), self.ax)
-                    for i, a in enumerate(ay):
-                        if i not in self.ignore_fields:
-                            a[0].set_data(range(len(self.ay[i])), self.ay[i])
+            rdata = self.ser.read(self.ser.in_waiting or 1)
+            self._buffer += (rdata)
+            lines = self._find_lines()
+            for l in lines:
+                data = l.split()
+                if len(data) == self.packet_length:
+                    if self.filter_str:
+                        check, *data = data
+                        if check == self.filter_str:
+                            print('{} {}'.format(self.sample_index, data))
+                            self.add(data)
+
+                            for i, f in enumerate(self.fields):
+                                ay[i].set_data(range(len(self.ay[i])), self.ay[i])
+                        else:
+                            print('Skipped packet: {} {}'.format(check, data))
+                    else:
+                        self.add(data)
+
+                        for i, a in enumerate(ay):
+                            if i in self.fields:
+                                a.set_data(range(len(self.ay[i])), self.ay[i])
                 else:
-                    print('Skipped packet: {} {}'.format(check, data))
-            else:
-                print('Skipped packet with invalid length: {}'.format(data))
+                    print('Skipped packet with invalid length: {}'.format(data))
         except KeyboardInterrupt:
             print('exiting')
 
         return ax,
+
+    def _find_lines(self):
+        packets = list()
+        pos = self._buffer.find(b'\r\n')
+        while pos > 0:
+            pos = self._buffer.find(b'\r\n')
+            if pos >= 0:
+                packet, self._buffer = self._buffer[:pos+2], self._buffer[pos+2:]
+                packets.append(packet)
+
+        return packets
 
     # clean up
     def close(self):
@@ -89,7 +115,10 @@ def main():
     parser.add_argument('--baud', '-b', dest='baud', required=True)
     parser.add_argument('--filter', '-f', dest='filter')
     parser.add_argument('--length', '-l', type=int, dest='length')
-    parser.add_argument('--ignore', '-i', nargs='*', type=int, dest='ignore')
+    parser.add_argument('--fields', '-F', nargs='*', type=int, dest='fields')
+    parser.add_argument('--field-names', '-n', nargs='*', type=str)
+    parser.add_argument('--startup-cmd', '-S', type=str, dest='startup_cmd')
+    parser.add_argument('--ymax', '-y', type=int, default=3000, dest='ymax')
 
     # parse args
     args = parser.parse_args()
@@ -97,35 +126,52 @@ def main():
     print('Reading from serial port %s...' % args.port)
 
     # plot parameters
+    kwargs = {}
+
+    kwargs['port'] = args.port
+    kwargs['baud'] = args.baud
+    kwargs['sample_length'] = 500
+
     if args.length:
-        plotter = SerialPlotter(args.port, args.baud, int((args.length - 1) / 2), 1000)
-        plotter.packet_length = args.length
+        kwargs['packet_length'] = args.length
     else:
-        plotter = SerialPlotter(args.port, args.baud, 1, 1000)
-        plotter.packet_length = 3
+        kwargs['packet_length'] = 3
+
+    kwargs['nb_axis'] = kwargs['packet_length']
 
     if args.filter:
-        plotter.filter_str = args.filter.encode()
+        kwargs['filter_str'] = args.filter.encode()
+        kwargs['nb_axis'] -= 1
 
-    if args.length:
-        plotter.packet_length = args.length
+    if args.fields:
+        kwargs['nb_axis'] = len(args.fields)
+        kwargs['fields'] = args.fields
 
-    if args.ignore:
-        plotter.ignore_fields = args.ignore
+    plotter = SerialPlotter(**kwargs)
+
+    if args.startup_cmd:
+        print('Sending startup command.')
+        plotter.ser.write((args.startup_cmd + '\r\n').encode())
 
     print('Plotting data...')
 
     # set up animation
     fig = plt.figure()
-    ax = plt.axes(xlim=(0, 1000), ylim=(0, 300))
+    ax = plt.axes(xlim=(0, plotter.sample_length), ylim=(0, args.ymax))
     ay = list()
-    for i in range(int((args.length - 1) / 2)):
-        ay.append(ax.plot([], []))
+    for i in range(plotter.nb_axis):
+        line, = ax.plot([], [])
+        if args.field_names and len(args.field_names) > i:
+            line.set_label(args.field_names[i])
+        else:
+            line.set_label(str(i))
+        ay.append(line)
 
     anim = animation.FuncAnimation(fig, plotter.update,
-            fargs=(ax, ay), interval=10)
+            fargs=(ax, ay), interval=100)
 
     # show plot
+    ax.legend()
     plt.show()
 
     # clean up
