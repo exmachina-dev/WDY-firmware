@@ -30,6 +30,7 @@
 #define WDY_LOOP_INTERVAL        10      // ms
 
 #define WDY_COMMAND_SLOTS       16      // divide 255 by 16
+#define WDY_INVERT_POS_COMMAND  true    // invert position
 
 // Physic constants
 // ----------------

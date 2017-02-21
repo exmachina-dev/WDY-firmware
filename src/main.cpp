@@ -327,6 +327,10 @@ static void CO_app_task(void){
                 uint8_t raw_accel = DMXdevice.parameter.accel;
                 uint8_t raw_decel = DMXdevice.parameter.decel;
 
+#if WDY_INVERT_POS_COMMAND
+                raw_position = DMX_MAX_VALUE16 - raw_position;
+#endif
+
                 map_DMX16_to_world(raw_speed, &cmd_speed, WDY_MAX_SPEED);
                 map_DMX16_to_world(raw_position, &cmd_position, WDY_MAX_POSITION);
                 map_DMXcommand_to_command(raw_command, &cmd_command);
