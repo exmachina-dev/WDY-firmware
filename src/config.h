@@ -41,9 +41,9 @@
 #define WDY_STRAP_LENGTH        30000   // mm
 #define WDY_STRAP_THICKNESS     1.1     // mm
 
-#define WDY_DRUM_CORE_DIA       120     // mm
-#define WDY_DRUM_OFFSET_TURNS  1.97     // turns - This is the minimum of turns
+#define WDY_DRUM_OFFSET_TURNS   1.97     // turns - This is the minimum of turns
                                         // rolled up onto the drum
+#define WDY_DRUM_CORE_DIA       120 + (WDY_DRUM_OFFSET_TURNS * 2 * WDY_STRAP_THICKNESS)      // mm
 
 #define WDY_STRAP_FIXED_OFFSET  428     // mm - This is the length of the strap path
 
