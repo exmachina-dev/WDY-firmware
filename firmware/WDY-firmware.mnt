@@ -183,12 +183,13 @@ Sub doHome()
   End If
 
   SPEED(_axis) = _defaultSpeed
-  INCA(_axis) = 0
-  GO(0)
+  INCA(_axis) = 0.0
+  GO(_axis)
+
+  Pause(IDLE(_axis))
 
   LIMITFORWARDINPUT(0) = 1     ' Enable forward limit switch
 
-  Pause(IDLE(0))
   SPEED(_axis) = 0
 
   _homeStatus.homed = 1
