@@ -264,7 +264,7 @@ static void CO_app_task(void){
     float cmd_decel = 0;
     wdy_command_t cmd_command = WDY_CMD_NONE;
 
-    wdy_status_t status = WDY_STS_NONE;
+    uint16_t status = WDY_STS_NONE;
 
     uint16_t homing_time = 0;
 
@@ -296,10 +296,11 @@ static void CO_app_task(void){
         if(CO != NULL && CO->CANmodule[0]->CANnormal) {
 
             while (err != 0) {
+                err = 0;
                 printf("Connecting to drive\r\n");
                 CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
 
-                err = CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
+                CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
 
                 Thread::wait(500);
 
@@ -354,12 +355,14 @@ static void CO_app_task(void){
 
 
             // Update drive status
-            if (!(status & MFE_STS_COMM_FAULT)) {
+            if (!(status & WDY_STS_COMM_FAULT)) {
                 err = MFE_get_status(&node, &nd_sts);
                 if (err != 0) {
                     printf("get sts: %d\r\n", err);
-                    status = WDY_STS_COMM_FAULT;
+                    status |= WDY_STS_COMM_FAULT;
                     continue;
+                } else {
+                    status &= !WDY_STS_COMM_FAULT;
                 }
             }
 
@@ -370,24 +373,23 @@ static void CO_app_task(void){
                 if (cmd_command == WDY_CMD_ENABLE) {
                     nd_cmd.to_int = MFE_CMD_ENABLE;
                     err = MFE_set_command(&node, &nd_cmd);
+
+                    status = status | WDY_STS_ENABLED;
                 } else if (cmd_command == WDY_CMD_HOME) {
                     nd_cmd.to_int = MFE_CMD_HOME;
                     err = MFE_set_command(&node, &nd_cmd);
 
-                    status = WDY_STS_HOME_IN_PROGRESS;
+                    status = status | WDY_STS_HOME_IN_PROGRESS;
+                    status = status & !WDY_STS_HOMED;
                 } else if (cmd_command == WDY_CMD_HOME_ENCODER) {
                     encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Reset encoder position
                 } else {  // WDY_CMD_NONE
                     nd_cmd.to_int = MFE_CMD_NONE;
                     err = MFE_set_command(&node, &nd_cmd);
-                    if (err != 0) {
-                        status = WDY_STS_COMM_FAULT;
-                        continue;
-                    }
                 }
 
                 if (err != 0) {
-                    status = WDY_STS_COMM_FAULT;
+                    status = status | WDY_STS_COMM_FAULT;
                     continue;
                 }
             }
@@ -404,7 +406,7 @@ static void CO_app_task(void){
 
 
             // Control loop of speed and position regarding external encoder
-            if (cmd_command == WDY_CMD_ENABLE && status == WDY_STS_HOMED) {     // Normal loop
+            if (cmd_command == WDY_CMD_ENABLE && (status & WDY_STS_HOMED)) {     // Normal loop
 
                 // First, get real position from encoder
                 enc_position = encoder.getPosition();
@@ -413,7 +415,7 @@ static void CO_app_task(void){
                 nd_spd.to_float = linear_to_rot(cmd_speed, length_to_drum_diameter(enc_position));
                 err = MFE_set_speed(&node, &nd_spd);
                 if (err != 0) {
-                    status = WDY_STS_COMM_FAULT;
+                    status |= WDY_STS_COMM_FAULT;
                     continue;
                 }
 
@@ -426,7 +428,7 @@ static void CO_app_task(void){
                     err = MFE_set_position(&node, &nd_pos);
 
                     if (err != 0) {
-                        status = WDY_STS_COMM_FAULT;
+                        status |= WDY_STS_COMM_FAULT;
                         continue;
                     }
 
@@ -434,9 +436,9 @@ static void CO_app_task(void){
 
                 printf("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
                        status, nd_spd.to_float, nd_pos.to_float, encoder.getSpeed(), enc_position);
-            } else if (status == WDY_STS_HOME_IN_PROGRESS) {      // Homing in progress
+            } else if (status & WDY_STS_HOME_IN_PROGRESS) {      // Homing in progress
                 if (nd_sts.to_int & MFE_STS_HOME_IN_PROGRESS) {
-                    status = WDY_STS_HOME_IN_PROGRESS;
+                    status |= WDY_STS_HOME_IN_PROGRESS;
                     homing_time++;
 
                     printf("HOM htime %d inprogress\r\n", homing_time);
@@ -445,7 +447,9 @@ static void CO_app_task(void){
 
                     encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Once the drive is homed, reset encoder position
 
-                    status = WDY_STS_HOMED;
+                    status |= WDY_STS_HOMED;
+                    status &= !WDY_STS_HOME_IN_PROGRESS;
+                    status &= !WDY_STS_HOME_TIMEOUT;
 
                     // Set defaults
                     nd_accel.to_float = linear_to_rot(
@@ -455,7 +459,7 @@ static void CO_app_task(void){
                     err = MFE_set_accel(&node, &nd_accel);
                     err += MFE_set_decel(&node, &nd_decel);
 
-                    printf("HOM htime %d done\r\n", homing_time);
+                    printf("HOM sts %d htime %d done\r\n", status, homing_time);
 
                     homing_time = 0;
                 } else if (homing_time > (WDY_MAX_HOMING_TIME / WDY_LOOP_INTERVAL)) {
@@ -464,19 +468,19 @@ static void CO_app_task(void){
                     homing_time = 0;
 
                     if (nd_sts.to_int & MFE_STS_UNPOWERED) {
-                        status = WDY_STS_UNPOWERED;
-                    } else {
-                        status = WDY_STS_HOME_TIMEOUT;
+                        status |= WDY_STS_UNPOWERED;
                     }
+
+                    status |= WDY_STS_HOME_TIMEOUT;
                 } else if (nd_sts.to_int & MFE_STS_HOME_TIMEOUT) {
                     printf("HOM htime %d timeout\r\n", homing_time);
 
-                    status = WDY_STS_HOME_TIMEOUT;
+                    status |= WDY_STS_HOME_TIMEOUT;
                 }
             } else {
                 enc_position = encoder.getPosition();
                 enc_speed = encoder.getSpeed();
-                printf("ENC mspd %f mpos %f\r\n", enc_speed, enc_position);
+                printf("ENC sts %d mspd %f mpos %f\r\n", status, enc_speed, enc_position);
             }
 
             // store commands
@@ -692,7 +696,6 @@ static void LAN_app_task(void) {
 }
 
 void _dmx_cb(uint16_t port, uint8_t *dmx_data) {
-
     memcpy(&DMXdevice.data, dmx_data, DMX_FOOTPRINT);
     DMXdevice.parameter.speed = swapBytes16(DMXdevice.parameter.speed);
     DMXdevice.parameter.position = swapBytes16(DMXdevice.parameter.position);
