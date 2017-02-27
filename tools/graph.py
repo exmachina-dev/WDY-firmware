@@ -99,10 +99,11 @@ class DataPlotter(object):
                 line, = self._axes[self.plot_to[f]].plot([], [])
             else:
                 line, = self._axes[0].plot([], [])
-            line.set_label(self.field_names[i])
+            if i < len(self.field_names):
+                line.set_label(self.field_names[i])
+            else:
+                line.set_label(str(i))
             self._lines.append(line)
-
-            print(plt.get_cmap().colors)
 
         if self._animate:
             animation.FuncAnimation(self._fig, self.update, interval=100)
@@ -195,13 +196,12 @@ def main():
     parser = argparse.ArgumentParser(description="Graph from serial data")
 
     parser.add_argument('--port', '-p', help='port to listen to')
-    parser.add_argument('--baud', '-b', type=int, default=115200, help='baudrate')
+    parser.add_argument('--baud', '-b', type=int, default=115200, help='baudrate of the serial port')
     parser.add_argument('--filter', '-f', dest='filter', help='if set, only the lines beginning with FILTER will be plotted')
     parser.add_argument('--length', '-l', type=int, help='if set, only the lines with a length of serial packet')
     parser.add_argument('--fields', '-F', nargs='*', type=int, help='if set, only the specified fields will be plotted')
     parser.add_argument('--field-names', '-n', nargs='*', type=str, help='specify names for fields')
     parser.add_argument('--startup-cmd', '-S', type=str, help='command to send at startup')
-    parser.add_argument('--ymax', '-y', type=int, default=3000, help='')
     parser.add_argument('--output-file', '-o', type=argparse.FileType('w'), help='file to store data')
     parser.add_argument('--input-file', '-i', type=argparse.FileType('r'), help='file to plot. If not specified, port must be set')
     parser.add_argument('--graph-to', '-g', metavar='F:P', nargs='*', type=str, help='display data to different a different plot. Arguments are F:P were F is the field and P is the plot')
@@ -209,6 +209,7 @@ def main():
     args = parser.parse_args()
 
     kwargs = vars(args)
+
     for k in list(kwargs.keys()):
         if kwargs[k] is None:
             kwargs.pop(k)
@@ -245,7 +246,6 @@ def main():
             parser.error('Misformated --graph-to option: %s' % kwargs['graph_to'])
 
         kwargs['ngraphs'] = max(pt.values()) + 1
-        print(pt.values())
 
     if 'port' in kwargs:
         print('Reading from serial port %s...' % kwargs['port'])
