@@ -46,6 +46,8 @@ extern "C" {
 
 #include "QEI.h"
 
+#include "libAC780.h"
+
 struct dmx_device_parameter_s {
     uint8_t command;
     uint16_t position;

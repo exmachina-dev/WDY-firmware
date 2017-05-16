@@ -63,6 +63,30 @@ QEI encoder(QEI_INVERT);
 // Serial
 Serial USBport(USBTX, USBRX);
 
+// LCD screen
+I2C i2c_lcd(P0_10, P0_11);
+AC780 lcd(&i2c_lcd, 0x78, P0_22, 0x5c);
+
+
+void printbar(int length, int perc) {
+    for (int i=0; i<length; i++) {
+        if (perc > (i * 100 / length)) {
+            if (!i)
+                lcd.putc(1);
+            else if (i == length-1)
+                lcd.putc(5);
+            else
+                lcd.putc(3);
+        } else {
+            if (!i)
+                lcd.putc(0);
+            else if (i == length-1)
+                lcd.putc(4);
+            else
+                lcd.putc(2);
+        }
+    }
+}
 
 int main(void) {
 
@@ -83,19 +107,46 @@ int main(void) {
 
     wdog.kick(10); // First watchdog kick to trigger it
 
-    printf("|=====================|\r\n");
-    printf("|    Winch Dynamic    |\r\n");
-    printf("|    by ExMachina     |\r\n");
-    printf("|=====================|\r\n");
-    printf("\r\n");
+    // LCD & contrast setup
+    i2c_lcd.frequency(400000);
+
+    lcd.setBacklight(true);
+
+    printf("LCD");
+    lcd.setContrast(0x0a);
+    lcd.setUDC(0, UDC_bar_left_empty);
+    lcd.setUDC(1, UDC_bar_left_full);
+    lcd.setUDC(2, UDC_bar_middle_empty);
+    lcd.setUDC(3, UDC_bar_middle_full);
+    lcd.setUDC(4, UDC_bar_right_empty);
+    lcd.setUDC(5, UDC_bar_right_full);
+    lcd.printf("   Winch  Dynamic\n");
+    lcd.printf("    by ExMachina");
+
+    lcd.locate(3, 1);
+    printbar(18, 1);
+
+    Thread::wait(200);
 
     // Fans default speed
     fan_top = 1.0;
     fan_bot = 1.0;
 
+    lcd.locate(3, 1);
+    printbar(18, 11);
+
+    Thread::wait(200);
+
+
     // Status led setup
     led1.period(0.02);
     led2.period(0.02);
+
+    lcd.locate(3, 1);
+    printbar(18, 22);
+
+    Thread::wait(200);
+
 
 
     // Encoder init
@@ -103,17 +154,18 @@ int main(void) {
     encoder.setPPR(WDY_ENCODER_PPR);
     encoder.setLinearFactor(WDY_ENCODER_FACTOR);
 
+    lcd.locate(3, 1);
+    printbar(18, 31);
+
+    Thread::wait(200);
 
     // Artnet init
     can_led = 1;
-    printf("\r\n");
-    printf("\r\n");
 
-    printf("LAN_thread");
     LAN_app_thread.start(LAN_app_task);
-    printf(".\r\n");
 
-    printf("\r\n");
+    lcd.locate(3, 1);
+    printbar(18, 42);
 
 #if MBED_CONF_APP_MEMTRACE
     mbed_stats_heap_get(&heap_stats);
@@ -156,6 +208,9 @@ int main(void) {
         }
         USBport.printf(". \r\n");
 
+        lcd.locate(3, 1);
+        printbar(18, 11);
+
 #if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
         printf("Current heap: %lu\r\n", heap_stats.current_size);
@@ -171,6 +226,9 @@ int main(void) {
         CANport->attach(&CO_CANInterruptHandler, CAN::TxIrq);
         USBport.printf(".\r\n");
 
+        lcd.locate(3, 1);
+        printbar(18, 38);
+
 #if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
         printf("Current heap: %lu\r\n", heap_stats.current_size);
@@ -183,6 +241,9 @@ int main(void) {
         USBport.printf("CO_app_thread");
         CO_app_thread.start(CO_app_task);
         USBport.printf(". \r\n");
+
+        lcd.locate(3, 1);
+        printbar(18, 67);
 
 #if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
@@ -200,6 +261,9 @@ int main(void) {
         wdog.kick(5); // Change watchdog timeout
 
         USBport.printf("done.\r\n\r\n");
+
+        lcd.locate(3, 1);
+        printbar(18, 99);
 
         while(reset == CO_RESET_NOT) {
             // loop for normal program execution
