@@ -11,3 +11,6 @@
 [submodule "lib/libQEI"]
 	path = lib/libQEI
 	url = git@git.exmachina.fr:LPC1768/libQEI.git
+[submodule "lib/libAC780"]
+	path = lib/libAC780
+	url = git@git.exmachina.fr:libAC780.git
