@@ -51,7 +51,7 @@ uint8_t swout[4];
 
 artnet_node_t LAN_node;
 
-Thread LAN_app_thread;
+Thread LAN_app_thread(osPriorityAboveNormal, 1024 * 4);
 
 dmx_device_union_t DMXdevice;
 dmx_device_union_t _lastDMXdevice;
