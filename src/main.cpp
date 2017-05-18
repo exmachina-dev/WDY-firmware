@@ -84,7 +84,6 @@ int main(void) {
 
     USBport.baud(115200);
 
-
     CO_timer.start();
     ticker_leds.attach_us(&CO_leds_task, 10 * 1000); // 10 ms
 
@@ -248,6 +247,7 @@ int main(void) {
 
     return 1;
 }
+
 
 // Application thread
 static void CO_app_task(void){
