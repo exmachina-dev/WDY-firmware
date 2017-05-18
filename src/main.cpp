@@ -1,7 +1,7 @@
 
 #include "main.h"
 
-#if MBED_CONF_APP_MEMTRACE
+#ifdef MBED_CONF_APP_MEMTRACE
 #include "mbed_stats.h"
 #include "mbed_mem_trace.h"
 #endif
@@ -66,7 +66,7 @@ Serial USBport(USBTX, USBRX);
 
 int main(void) {
 
-#if MBED_CONF_APP_MEMTRACE
+#ifdef MBED_CONF_APP_MEMTRACE
     mbed_stats_heap_t heap_stats;
     mbed_mem_trace_set_callback(mbed_mem_trace_default_callback);
 #endif
@@ -114,7 +114,7 @@ int main(void) {
 
     printf("\r\n");
 
-#if MBED_CONF_APP_MEMTRACE
+#ifdef MBED_CONF_APP_MEMTRACE
     mbed_stats_heap_get(&heap_stats);
     DEBUG_PRINTF("Current heap: %lu\r\n", heap_stats.current_size);
     DEBUG_PRINTF("Max heap size: %lu\r\n", heap_stats.max_size);
@@ -140,7 +140,7 @@ int main(void) {
 
         if(err != CO_ERROR_NO){
             err_led = 1;
-#if MBED_CONF_APP_MEMTRACE
+#ifdef MBED_CONF_APP_MEMTRACE
             mbed_stats_heap_get(&heap_stats);
             DEBUG_PRINTF("Current heap: %lu\r\n", heap_stats.current_size);
             DEBUG_PRINTF("Max heap size: %lu\r\n", heap_stats.max_size);
@@ -155,7 +155,7 @@ int main(void) {
         }
         DEBUG_PRINTF(". \r\n");
 
-#if MBED_CONF_APP_MEMTRACE
+#ifdef MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
         DEBUG_PRINTF("Current heap: %lu\r\n", heap_stats.current_size);
         DEBUG_PRINTF("Max heap size: %lu\r\n", heap_stats.max_size);
@@ -170,7 +170,7 @@ int main(void) {
         CANport->attach(&CO_CANInterruptHandler, CAN::TxIrq);
         DEBUG_PRINTF(".\r\n");
 
-#if MBED_CONF_APP_MEMTRACE
+#ifdef MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
         DEBUG_PRINTF("Current heap: %lu\r\n", heap_stats.current_size);
         DEBUG_PRINTF("Max heap size: %lu\r\n", heap_stats.max_size);
@@ -183,7 +183,7 @@ int main(void) {
         CO_app_thread.start(CO_app_task);
         DEBUG_PRINTF(". \r\n");
 
-#if MBED_CONF_APP_MEMTRACE
+#ifdef MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
         DEBUG_PRINTF("Current heap: %lu\r\n", heap_stats.current_size);
         DEBUG_PRINTF("Max heap size: %lu\r\n", heap_stats.max_size);
