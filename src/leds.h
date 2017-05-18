@@ -2,6 +2,7 @@
 #define LED_H_
 
 #include "mbed.h"
+#include "pins.h"
 
 DigitalOut  can_led(LED1);
 DigitalOut  err_led(LED2);

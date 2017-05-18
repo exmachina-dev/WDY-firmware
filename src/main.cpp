@@ -68,8 +68,8 @@ QEI encoder(QEI_INVERT);
 Serial USBport(USBTX, USBRX);
 
 // LCD screen
-I2C i2c_lcd(P0_10, P0_11);
-AC780 lcd(&i2c_lcd, 0x78, P0_22, 0x5c);
+I2C i2c2(P0_10, P0_11);
+AC780 lcd(&i2c2, 0x78, P0_22, 0x5c);
 
 
 Thread UI_app_thread(osPriorityBelowNormal, 1024);

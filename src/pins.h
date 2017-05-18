@@ -75,30 +75,4 @@
 #define CAN1_RXD        P0_0
 #define CAN1_TXD        P0_1
 
-// Leds
-DigitalOut led1(LED1);
-DigitalOut led2(LED2);
-DigitalOut led3(LED_HMI1);
-DigitalOut led4(LED_HMI2);
-DigitalOut led5(LED_HMI3);
-DigitalOut led6(LED_HMI4);
-
-// Inputs
-DigitalIn drive_status(DRV_STS1);
-DigitalIn slowfeed_input(DRV_STS2);
-#if ABK_SIMULATE
-bool ac_trigger;
-#else
-DigitalIn ac_trigger(TRIGG_INPUT2);
-#endif
-DigitalIn drum_limit(LIMIT_SW1);
-DigitalIn emergency_stop(EMERGENCY_STOP);
-
-// Outputs
-DigitalOut brake(CTL_BRAKE);
-DigitalOut clutch(CTL_CLUTCH);
-DigitalOut dir_fw(CTL_FW_DIR);
-DigitalOut dir_rw(CTL_RW_DIR);
-PwmOut motor_ctl(CTL_PWM_MOT);
-
 #endif /* !PINS_H */
