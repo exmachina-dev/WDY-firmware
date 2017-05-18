@@ -44,12 +44,12 @@ int CO_SDO_write(
         CO_SDOclient_return_t ret;
         uint16_t timer1msPrev;
 
-        timer1msPrev = CO_timer1ms;
+        timer1msPrev = CO_timer.read_ms();
 
         do {
             uint16_t timer1ms, timer1msDiff;
 
-            timer1ms = CO_timer1ms;
+            timer1ms = CO_timer.read_ms();
             timer1msDiff = timer1ms - timer1msPrev;
             timer1msPrev = timer1ms;
 
@@ -83,12 +83,12 @@ int CO_SDO_read(
         CO_SDOclient_return_t ret;
         uint16_t timer1msPrev;
 
-        timer1msPrev = CO_timer1ms;
+        timer1msPrev = CO_timer.read_ms();
 
         do {
             uint16_t timer1ms, timer1msDiff;
 
-            timer1ms = CO_timer1ms;
+            timer1ms = CO_timer.read_ms();
             timer1msDiff = timer1ms - timer1msPrev;
             timer1msPrev = timer1ms;
 

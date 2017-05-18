@@ -67,8 +67,6 @@ static void CO_app_task(void);
 
 static void CO_sync_task(void);
 
-static void CO_timer1ms_task(void);
-
 static void CO_leds_task(void);
 
 void CO_CANInterruptHandler(void);

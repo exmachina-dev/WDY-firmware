@@ -18,12 +18,12 @@ extern "C" {
 
 Watchdog wdog;
 
-// CANopen
-volatile uint16_t   CO_timer1ms = 0U;   // variable increments each millisecond
+// CANopen timer and state
+Timer               CO_timer;
+CO_NMT_reset_cmd_t  reset;
 
 extern "C" void mbed_reset();
 
-Ticker ticker_1ms;
 Ticker ticker_sync;
 Ticker ticker_leds;
 
@@ -76,10 +76,9 @@ int main(void) {
 
     USBport.baud(115200);
 
-    ticker_1ms.attach_us(&CO_timer1ms_task, 1000);
     ticker_leds.attach(&CO_leds_task, 0.01);
 
-    CO_NMT_reset_cmd_t reset;
+    CO_timer.start();
 
     wdog.kick(10); // First watchdog kick to trigger it
 
@@ -195,7 +194,7 @@ int main(void) {
         //err_led = 0;
 
         reset = CO_RESET_NOT;
-        timer1msPrevious = CO_timer1ms;
+        timer1msPrevious = CO_timer.read_ms();
 
         wdog.kick(5); // Change watchdog timeout
 
@@ -206,7 +205,7 @@ int main(void) {
 
             wdog.kick(); // Kick the watchdog
 
-            timer1msCopy = CO_timer1ms;
+            timer1msCopy = CO_timer.read_ms();
             timer1msDiff = timer1msCopy - timer1msPrevious;
             timer1msPrevious = timer1msCopy;
 
@@ -246,7 +245,6 @@ int main(void) {
 static void CO_app_task(void){
     uint8_t err = 1;
 
-    uint16_t timer1msPrevious;
     uint16_t timer1msCopy;
     uint16_t timerTempPrevious = 0;
     uint16_t timerTempDiff = 0;

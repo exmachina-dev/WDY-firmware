@@ -11,7 +11,7 @@ extern "C" {
 #include "CO_SDOmaster.h"
 }
 
-extern volatile uint16_t    CO_timer1ms;    /* from main */
+extern Timer    CO_timer;    /* from main */
 
 extern CO_t *CO;
 
