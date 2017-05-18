@@ -78,4 +78,6 @@ void CO_CANInterruptHandler(void);
 static void LAN_app_task(void);
 static void _dmx_cb(uint16_t port, uint8_t *data);
 
+static void UI_app_task(void);
+
 #endif

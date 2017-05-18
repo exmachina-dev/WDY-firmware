@@ -68,6 +68,11 @@ I2C i2c_lcd(P0_10, P0_11);
 AC780 lcd(&i2c_lcd, 0x78, P0_22, 0x5c);
 
 
+Thread UI_app_thread(osPriorityBelowNormal, 1024);
+Ticker ticker_leds;
+
+int8_t WDY_init = 0;
+
 void printbar(int length, int perc) {
     for (int i=0; i<length; i++) {
         if (perc > (i * 100 / length)) {
@@ -95,45 +100,29 @@ int main(void) {
     mbed_mem_trace_set_callback(mbed_mem_trace_default_callback);
 #endif
 
+    UI_app_thread.start(UI_app_task);
+
     LAN_eth = &_eth;
     LAN_packet = &_packet;
 
-    USBport.baud(115200);
+    WDY_init = 5;
 
     ticker_1ms.attach_us(&CO_timer1ms_task, 1000);
     ticker_leds.attach(&CO_leds_task, 0.01);
+    USBport.baud(115200);
 
     CO_NMT_reset_cmd_t reset;
 
     wdog.kick(10); // First watchdog kick to trigger it
 
-    // LCD & contrast setup
-    i2c_lcd.frequency(400000);
-
-    lcd.setBacklight(true);
-
-    printf("LCD");
-    lcd.setContrast(0x0a);
-    lcd.setUDC(0, UDC_bar_left_empty);
-    lcd.setUDC(1, UDC_bar_left_full);
-    lcd.setUDC(2, UDC_bar_middle_empty);
-    lcd.setUDC(3, UDC_bar_middle_full);
-    lcd.setUDC(4, UDC_bar_right_empty);
-    lcd.setUDC(5, UDC_bar_right_full);
-    lcd.printf("   Winch  Dynamic\n");
-    lcd.printf("    by ExMachina");
-
-    lcd.locate(3, 1);
-    printbar(18, 1);
-
-    Thread::wait(200);
+    // I2C bus speed: 400 kHz
+    i2c2.frequency(400 * 1000);
 
     // Fans default speed
     fan_top = 1.0;
     fan_bot = 1.0;
 
-    lcd.locate(3, 1);
-    printbar(18, 11);
+    WDY_init = 10;
 
     Thread::wait(200);
 
@@ -142,8 +131,7 @@ int main(void) {
     led1.period(0.02);
     led2.period(0.02);
 
-    lcd.locate(3, 1);
-    printbar(18, 22);
+    WDY_init = 22;
 
     Thread::wait(200);
 
@@ -154,8 +142,7 @@ int main(void) {
     encoder.setPPR(WDY_ENCODER_PPR);
     encoder.setLinearFactor(WDY_ENCODER_FACTOR);
 
-    lcd.locate(3, 1);
-    printbar(18, 31);
+    WDY_init = 31;
 
     Thread::wait(200);
 
@@ -164,8 +151,7 @@ int main(void) {
 
     LAN_app_thread.start(LAN_app_task);
 
-    lcd.locate(3, 1);
-    printbar(18, 42);
+    WDY_init = 42;
 
 #if MBED_CONF_APP_MEMTRACE
     mbed_stats_heap_get(&heap_stats);
@@ -208,8 +194,7 @@ int main(void) {
         }
         USBport.printf(". \r\n");
 
-        lcd.locate(3, 1);
-        printbar(18, 11);
+        WDY_init = 11;
 
 #if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
@@ -226,8 +211,7 @@ int main(void) {
         CANport->attach(&CO_CANInterruptHandler, CAN::TxIrq);
         USBport.printf(".\r\n");
 
-        lcd.locate(3, 1);
-        printbar(18, 38);
+        WDY_init = 38;
 
 #if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
@@ -242,8 +226,7 @@ int main(void) {
         CO_app_thread.start(CO_app_task);
         USBport.printf(". \r\n");
 
-        lcd.locate(3, 1);
-        printbar(18, 67);
+        WDY_init = 67;
 
 #if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
@@ -262,8 +245,7 @@ int main(void) {
 
         USBport.printf("done.\r\n\r\n");
 
-        lcd.locate(3, 1);
-        printbar(18, 99);
+        WDY_init = 75;
 
         while(reset == CO_RESET_NOT) {
             // loop for normal program execution
@@ -277,6 +259,9 @@ int main(void) {
 
             // CANopen process
             reset = CO_process(CO, timer1msDiff, NULL);
+            if (reset != CO_RESET_NOT) {
+                WDY_init = -1;
+            }
 
             // Nonblocking application code may go here.
 
@@ -361,9 +346,12 @@ static void CO_app_task(void){
 
             while (err != 0) {
                 printf("Connecting to drive\r\n");
+                WDY_init = 80;
                 CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
 
                 err = CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
+
+                WDY_init = 85;
 
                 Thread::wait(500);
 
@@ -373,16 +361,21 @@ static void CO_app_task(void){
                     continue;
                 }
 
+                WDY_init = 90;
+                Thread::wait(500);
+
                 err = MFE_connect(&node, 100);
                 printf("drive: %d\r\n", err);
 
                 CO->NMT->operatingState = CO_NMT_OPERATIONAL;
 
+                if (err == 0)
+                    WDY_init = 100;
+
                 Thread::wait(50);
             }
 
-            timer1msCopy = CO_timer1ms;
-            timer1msPrevious = timer1msCopy;
+            timer1msCopy = CO_timer.read_ms();
 
             if (new_dmx_sig) {                          // New DMX data
                 uint16_t raw_speed = DMXdevice.parameter.speed;
@@ -767,5 +760,101 @@ void _dmx_cb(uint16_t port, uint8_t *dmx_data) {
     if (memcmp(&_lastDMXdevice.data, &DMXdevice.data, DMX_FOOTPRINT)) {
         memcpy(&_lastDMXdevice.data, &DMXdevice.data, DMX_FOOTPRINT);
         new_dmx_sig = true;
+    }
+}
+
+void printbar(int length, int perc) {
+    for (int i=0; i<length; i++) {
+        if (perc > (i * 100 / length)) {
+            if (!i)
+                lcd.putc(1);
+            else if (i == length-1)
+                lcd.putc(5);
+            else
+                lcd.putc(3);
+        } else {
+            if (!i)
+                lcd.putc(0);
+            else if (i == length-1)
+                lcd.putc(4);
+            else
+                lcd.putc(2);
+        }
+    }
+}
+
+
+void _topbar() {
+}
+
+void _buttonsbar() {
+    char icons[] = {4, 3, 2, 5};
+
+    for (int b=0; b<4; b++) {
+        lcd.locate(3, 2 + b * 5);
+        lcd.putc(icons[b]);
+    }
+}
+
+static void UI_app_task(void) {
+    bool _init = true;
+
+    lcd.setBacklight(true);
+    lcd.setContrast(0x0a);
+
+    lcd.setUDC(0, UDC_bar_left_empty);
+    lcd.setUDC(1, UDC_bar_left_full);
+    lcd.setUDC(2, UDC_bar_middle_empty);
+    lcd.setUDC(3, UDC_bar_middle_full);
+    lcd.setUDC(4, UDC_bar_right_empty);
+    lcd.setUDC(5, UDC_bar_right_full);
+
+    lcd.printf("   Winch  Dynamic\n");
+    lcd.printf("    by ExMachina");
+
+    while (true) {
+        while (_init) {
+            led1 = 1;
+            led2 = 1;
+            led3 = 1;
+            led4 = 1;
+
+            lcd.locate(3, 1);
+
+            if (WDY_init < 0) {
+                lcd.printf("ERROR %d", WDY_init);
+            } else if (WDY_init >= 100) {
+                _init = false;
+                printbar(18, 100);
+                Thread::wait(500);
+                lcd.clear();
+
+                lcd.setUDC(0, UDC_arrow_left);
+                lcd.setUDC(1, UDC_arrow_right);
+                lcd.setUDC(2, UDC_arrow_up);
+                lcd.setUDC(3, UDC_arrow_down);
+                lcd.setUDC(4, UDC_icon_menu);
+                lcd.setUDC(5, UDC_icon_ok);
+                lcd.setUDC(6, UDC_icon_cancel);
+
+                led1 = 0;
+                led2 = 0;
+                led3 = 0;
+                led4 = 0;
+            } else {
+                printbar(18, WDY_init);
+            }
+
+            Thread::wait(50);
+        }
+
+        _topbar();
+        _buttonsbar();
+        lcd.locate(1, 0);
+        lcd.printf("%s       ", inet_ntoa(ip_addr));
+        lcd.locate(2, 0);
+        lcd.printf("%s       ", inet_ntoa(nm_addr));
+
+        Thread::wait(250);
     }
 }
