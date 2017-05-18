@@ -302,11 +302,15 @@ static void CO_app_task(void){
         if(CO != NULL && CO->CANmodule[0]->CANnormal) {
 
             while (err != 0) {
-                err = 0;
                 DEBUG_PRINTF("Connecting to drive\r\n");
                 CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
 
-                CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
+                CO_ReturnError_t state = CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
+                if (state == CO_ERROR_TX_OVERFLOW) {    // First powerup, MFE takes time to talk
+                    reset = CO_RESET_COMM;
+                    Thread::wait(1000);
+                    continue;
+                }
 
                 Thread::wait(500);
 
@@ -315,6 +319,8 @@ static void CO_app_task(void){
                     Thread::wait(500);
                     continue;
                 }
+
+                Thread::wait(500);
 
                 err = MFE_connect(&node, 100);
                 printf("drive: %d\r\n", err);
@@ -524,7 +530,7 @@ static void CO_app_task(void){
 
             led2 = !led2;
         } else {
-            printf("Waiting for CAN.\r\n");
+            DEBUG_PRINTF("Waiting for CAN.\r\n");
             Thread::wait(1000);
         }
     }
