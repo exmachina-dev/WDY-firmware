@@ -3,12 +3,12 @@
 
 #include "mbed.h"
 
-DigitalOut  can_led(P1_21);
-DigitalOut  err_led(P1_18);
+DigitalOut  can_led(LED1);
+DigitalOut  err_led(LED2);
 
-PwmOut      led1(P2_2);
-PwmOut      led2(P2_3);
-PwmOut      led3(P2_4);
-PwmOut      led4(P2_5);
+PwmOut      led1(LED_HMI1);
+PwmOut      led2(LED_HMI2);
+PwmOut      led3(LED_HMI3);
+PwmOut      led4(LED_HMI4);
 
 #endif // LED_H

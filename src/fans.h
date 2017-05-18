@@ -3,8 +3,8 @@
 
 #include "mbed.h"
 
-PwmOut      fan_top(P2_0);
-PwmOut      fan_bot(P2_1);
+PwmOut      fan_top(FAN_P1);
+PwmOut      fan_bot(FAN_P2);
 
 #endif // FANS_H
 
