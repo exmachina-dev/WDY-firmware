@@ -25,9 +25,9 @@ CO_NMT_reset_cmd_t  reset;
 extern "C" void mbed_reset();
 
 Ticker ticker_sync;
-Ticker ticker_leds;
 
 Thread CO_app_thread;
+
 
 // ArtNet
 EthernetInterface* LAN_eth = NULL;
@@ -53,15 +53,23 @@ artnet_node_t LAN_node;
 
 Thread LAN_app_thread(osPriorityAboveNormal, 1024 * 4);
 
+//
+// DMX device
 dmx_device_union_t DMXdevice;
 dmx_device_union_t _lastDMXdevice;
 bool new_dmx_sig = false;
 
+
 // Encoder
 QEI encoder(QEI_INVERT);
 
-// Serial
+
+// Serial debug port
 Serial USBport(USBTX, USBRX);
+
+
+// UI
+Ticker ticker_leds;
 
 
 int main(void) {
@@ -76,9 +84,9 @@ int main(void) {
 
     USBport.baud(115200);
 
-    ticker_leds.attach(&CO_leds_task, 0.01);
 
     CO_timer.start();
+    ticker_leds.attach_us(&CO_leds_task, 10 * 1000); // 10 ms
 
     wdog.kick(10); // First watchdog kick to trigger it
 
