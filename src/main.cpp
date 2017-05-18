@@ -551,11 +551,6 @@ static void CO_sync_task(void){
     }
 }
 
-// Timer update task
-static void CO_timer1ms_task(void) {
-    CO_timer1ms++;
-}
-
 // Led update task
 static void CO_leds_task(void) {
     can_led = LED_GREEN_RUN(CO->NMT) ? true : false;
