@@ -46,6 +46,12 @@ extern "C" {
 
 #include "QEI.h"
 
+#if defined(WDY_DEBUG) && (WDY_DEBUG != 0)
+#define DEBUG_PRINTF(...) (printf(__VA_ARGS__))
+#else
+#define DEBUG_PRINTF(...) (0)
+#endif
+
 struct dmx_device_parameter_s {
     uint8_t command;
     uint16_t position;

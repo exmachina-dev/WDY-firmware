@@ -1,6 +1,10 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+// Global behaviour settings
+// -------------------------
+#define WDY_DEBUG           (0)
+
 // Math constants
 // --------------
 #define WDY_PI                  3.1415926535

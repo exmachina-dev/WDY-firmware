@@ -116,8 +116,8 @@ int main(void) {
 
 #if MBED_CONF_APP_MEMTRACE
     mbed_stats_heap_get(&heap_stats);
-    printf("Current heap: %lu\r\n", heap_stats.current_size);
-    printf("Max heap size: %lu\r\n", heap_stats.max_size);
+    DEBUG_PRINTF("Current heap: %lu\r\n", heap_stats.current_size);
+    DEBUG_PRINTF("Max heap size: %lu\r\n", heap_stats.max_size);
 #endif
 
     // CANopen init
@@ -132,7 +132,7 @@ int main(void) {
         wdog.kick(); // Kick the watchdog
 
         // initialize CANopen
-        printf("malloc");
+        DEBUG_PRINTF("malloc");
         err = CO_init(
                 (int32_t)0,             // CAN module address
                 (uint8_t)CO_NODEID,    // NodeID
@@ -142,51 +142,51 @@ int main(void) {
             err_led = 1;
 #if MBED_CONF_APP_MEMTRACE
             mbed_stats_heap_get(&heap_stats);
-            printf("Current heap: %lu\r\n", heap_stats.current_size);
-            printf("Max heap size: %lu\r\n", heap_stats.max_size);
+            DEBUG_PRINTF("Current heap: %lu\r\n", heap_stats.current_size);
+            DEBUG_PRINTF("Max heap size: %lu\r\n", heap_stats.max_size);
 #endif
 
-            printf(" error: %d\r\n", err);
-            printf(" size of OD_RAM: %d\r\n", sizeof(sCO_OD_RAM));
-            printf(" size of OD_ROM: %d\r\n", sizeof(sCO_OD_ROM));
-            printf(" size of OD_EEPROM: %d\r\n", sizeof(sCO_OD_EEPROM));
+            DEBUG_PRINTF(" error: %d\r\n", err);
+            DEBUG_PRINTF(" size of OD_RAM: %d\r\n", sizeof(sCO_OD_RAM));
+            DEBUG_PRINTF(" size of OD_ROM: %d\r\n", sizeof(sCO_OD_ROM));
+            DEBUG_PRINTF(" size of OD_EEPROM: %d\r\n", sizeof(sCO_OD_EEPROM));
             while(1);
                 CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err);
         }
-        USBport.printf(". \r\n");
+        DEBUG_PRINTF(". \r\n");
 
 #if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
-        printf("Current heap: %lu\r\n", heap_stats.current_size);
-        printf("Max heap size: %lu\r\n", heap_stats.max_size);
+        DEBUG_PRINTF("Current heap: %lu\r\n", heap_stats.current_size);
+        DEBUG_PRINTF("Max heap size: %lu\r\n", heap_stats.max_size);
 #endif
 
         CO_CANsetNormalMode(CO->CANmodule[0]);
 
         // Configure CAN transmit and receive interrupt
 
-        USBport.printf("CO_attach");
+        DEBUG_PRINTF("CO_attach");
         CANport->attach(&CO_CANInterruptHandler, CAN::RxIrq);
         CANport->attach(&CO_CANInterruptHandler, CAN::TxIrq);
-        USBport.printf(".\r\n");
+        DEBUG_PRINTF(".\r\n");
 
 #if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
-        printf("Current heap: %lu\r\n", heap_stats.current_size);
-        printf("Max heap size: %lu\r\n", heap_stats.max_size);
+        DEBUG_PRINTF("Current heap: %lu\r\n", heap_stats.current_size);
+        DEBUG_PRINTF("Max heap size: %lu\r\n", heap_stats.max_size);
 #endif
 
         // Start CAN
         ticker_sync.attach_us(&CO_sync_task, 1000);     // Only start CO_sync after CO_init !
 
-        USBport.printf("CO_app_thread");
+        DEBUG_PRINTF("CO_app_thread");
         CO_app_thread.start(CO_app_task);
-        USBport.printf(". \r\n");
+        DEBUG_PRINTF(". \r\n");
 
 #if MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
-        printf("Current heap: %lu\r\n", heap_stats.current_size);
-        printf("Max heap size: %lu\r\n", heap_stats.max_size);
+        DEBUG_PRINTF("Current heap: %lu\r\n", heap_stats.current_size);
+        DEBUG_PRINTF("Max heap size: %lu\r\n", heap_stats.max_size);
 #endif
 
 
@@ -198,7 +198,7 @@ int main(void) {
 
         wdog.kick(5); // Change watchdog timeout
 
-        USBport.printf("done.\r\n\r\n");
+        DEBUG_PRINTF("done.\r\n\r\n");
 
         while(reset == CO_RESET_NOT) {
             // loop for normal program execution
@@ -295,7 +295,7 @@ static void CO_app_task(void){
 
             while (err != 0) {
                 err = 0;
-                printf("Connecting to drive\r\n");
+                DEBUG_PRINTF("Connecting to drive\r\n");
                 CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
 
                 CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
@@ -337,9 +337,9 @@ static void CO_app_task(void){
                 map_DMX8_to_world(raw_accel, &cmd_accel, WDY_MAX_ACCEL);
                 map_DMX8_to_world(raw_decel, &cmd_decel, WDY_MAX_DECEL);
 
-                printf("DMX cmd %d\t pos %d spd %d acc %d dec %d\r\n",
+                DEBUG_PRINTF("DMX cmd %d\t pos %d spd %d acc %d dec %d\r\n",
                       raw_command, raw_position, raw_speed, raw_accel, raw_decel);
-                printf("REAL cmd %d\t pos %f spd %f acc %f dec %f\r\n",
+                DEBUG_PRINTF("REAL cmd %d\t pos %f spd %f acc %f dec %f\r\n",
                       cmd_command, cmd_position, cmd_speed, cmd_accel, cmd_decel);
 
                 new_dmx_sig = false;                    // Reset signal
@@ -356,7 +356,7 @@ static void CO_app_task(void){
             if (!(status & WDY_STS_COMM_FAULT)) {
                 err = MFE_get_status(&node, &nd_sts);
                 if (err != 0) {
-                    printf("get sts: %d\r\n", err);
+                    DEBUG_PRINTF("get sts: %d\r\n", err);
                     status |= WDY_STS_COMM_FAULT;
                     continue;
                 } else {
@@ -366,7 +366,7 @@ static void CO_app_task(void){
 
 
             if (new_cmd_sig) {
-                printf("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
+                DEBUG_PRINTF("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
 
                 if (cmd_command == WDY_CMD_ENABLE) {
                     nd_cmd.to_int = MFE_CMD_ENABLE;
@@ -432,14 +432,14 @@ static void CO_app_task(void){
 
                 }
 
-                printf("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
+                DEBUG_PRINTF("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
                        status, nd_spd.to_float, nd_pos.to_float, encoder.getSpeed(), enc_position);
             } else if (status & WDY_STS_HOME_IN_PROGRESS) {      // Homing in progress
                 if (nd_sts.to_int & MFE_STS_HOME_IN_PROGRESS) {
                     status |= WDY_STS_HOME_IN_PROGRESS;
                     homing_time++;
 
-                    printf("HOM htime %d inprogress\r\n", homing_time);
+                    DEBUG_PRINTF("HOM htime %d inprogress\r\n", homing_time);
                 } else if (nd_sts.to_int & MFE_STS_HOMED) {
                     Thread::wait(100);
 
@@ -457,11 +457,11 @@ static void CO_app_task(void){
                     err = MFE_set_accel(&node, &nd_accel);
                     err += MFE_set_decel(&node, &nd_decel);
 
-                    printf("HOM sts %d htime %d done\r\n", status, homing_time);
+                    DEBUG_PRINTF("HOM htime %d done\r\n", homing_time);
 
                     homing_time = 0;
                 } else if (homing_time > (WDY_MAX_HOMING_TIME / WDY_LOOP_INTERVAL)) {
-                    printf("HOM htime %d timeout\r\n", homing_time);
+                    DEBUG_PRINTF("HOM htime %d timeout\r\n", homing_time);
 
                     homing_time = 0;
 
@@ -471,14 +471,14 @@ static void CO_app_task(void){
 
                     status |= WDY_STS_HOME_TIMEOUT;
                 } else if (nd_sts.to_int & MFE_STS_HOME_TIMEOUT) {
-                    printf("HOM htime %d timeout\r\n", homing_time);
+                    DEBUG_PRINTF("HOM htime %d timeout\r\n", homing_time);
 
                     status |= WDY_STS_HOME_TIMEOUT;
                 }
             } else {
                 enc_position = encoder.getPosition();
                 enc_speed = encoder.getSpeed();
-                printf("ENC sts %d mspd %f mpos %f\r\n", status, enc_speed, enc_position);
+                DEBUG_PRINTF("ENC mspd %f mpos %f\r\n", enc_speed, enc_position);
             }
 
             // store commands
@@ -504,7 +504,7 @@ static void CO_app_task(void){
 
                     fan_top = 0.35 + (float)((_temp.to_float / 50.0) * 0.65);
                     fan_bot = 0.35 + (float)((_temp.to_float / 50.0) * 0.65);
-                    printf("TEMP tmp %f f1 %f f2 %f\r\n", _temp.to_float, (float) fan_top, (float) fan_bot);
+                    DEBUG_PRINTF("TEMP tmp %f f1 %f f2 %f\r\n", _temp.to_float, (float) fan_top, (float) fan_bot);
                 } else {
                     fan_top = 1.0;
                     fan_bot = 1.0;
@@ -566,14 +566,14 @@ static void LAN_app_task(void) {
         rtn = 1;
 
         while (rtn != 0) {
-            printf("LAN_set_network\r\n");
+            DEBUG_PRINTF("LAN_set_network\r\n");
             char ip_str[14];
             char nm_str[14];
             char gw_str[14];
 
             LAN_eth->set_dhcp(dhcp);
             if (!dhcp) {
-                printf("MAC: %s\r\n", LAN_eth->get_mac_address());
+                DEBUG_PRINTF("MAC: %s\r\n", LAN_eth->get_mac_address());
                 unsigned int values[6];
                 uint8_t bytes[6];
                 if( 6 == sscanf(LAN_eth->get_mac_address(), "%x:%x:%x:%x:%x:%x",
@@ -591,25 +591,25 @@ static void LAN_app_task(void) {
                 strncpy(nm_str, inet_ntoa(nm_addr), sizeof(nm_str));
                 strncpy(gw_str, inet_ntoa(gw_addr), sizeof(gw_str));
 
-                printf("IP: %s\r\n", ip_str);
-                printf("NM: %s\r\n", nm_str);
+                DEBUG_PRINTF("IP: %s\r\n", ip_str);
+                DEBUG_PRINTF("NM: %s\r\n", nm_str);
                 rtn = LAN_eth->set_network(ip_str, nm_str, gw_str);
             } else {
                 rtn = 0;
             }
 
             if (rtn != 0) {
-                printf("Failed to set network: %d\r\n", rtn);
+                DEBUG_PRINTF("Failed to set network: %d\r\n", rtn);
                 Thread::wait(10000);
                 // artnet_error("Failed to set network: %d", rtn);
                 continue;
             }
 
-            printf("Connecting\r\n");
+            DEBUG_PRINTF("Connecting\r\n");
             rtn = LAN_eth->connect();
 
             if (rtn != 0) {
-                printf("Failed to connect: %d\r\n", rtn);
+                DEBUG_PRINTF("Failed to connect: %d\r\n", rtn);
                 Thread::wait(10000);
                 // artnet_error("Failed to set network: %d", rtn);
                 continue;
@@ -617,21 +617,21 @@ static void LAN_app_task(void) {
 
             LAN_sock = new UDPSocket();
 
-            printf("LAN_eth: %s %s\r\n", LAN_eth->get_ip_address(), LAN_eth->get_netmask());
+            DEBUG_PRINTF("LAN_eth: %s %s\r\n", LAN_eth->get_ip_address(), LAN_eth->get_netmask());
             inet_aton(LAN_eth->get_ip_address(), &ip_addr);
             inet_aton(LAN_eth->get_netmask(), &nm_addr);
 
             bc_addr.s_addr = (uint32_t) ip_addr.s_addr & (uint32_t) nm_addr.s_addr;
             bc_addr.s_addr |= (uint32_t) 0xffffffff & (uint32_t) ~nm_addr.s_addr;
 
-            printf("LAN_eth: %s", inet_ntoa(ip_addr));
-            printf(" %s", inet_ntoa(nm_addr));
-            printf(" %s\r\n", inet_ntoa(bc_addr));
+            DEBUG_PRINTF("LAN_eth: %s", inet_ntoa(ip_addr));
+            DEBUG_PRINTF(" %s", inet_ntoa(nm_addr));
+            DEBUG_PRINTF(" %s\r\n", inet_ntoa(bc_addr));
 
             rtn = LAN_sock->open(LAN_eth);
             if (rtn != 0) {
                 // artnet_error(&LAN_node, "Could not create LAN_socket: %d", nsapi_rtn);
-                printf("Could not create LAN_socket: %d\r\n", rtn);
+                DEBUG_PRINTF("Could not create LAN_socket: %d\r\n", rtn);
                 Thread::wait(10000);
                 continue;
             }
@@ -664,9 +664,9 @@ static void LAN_app_task(void) {
                 continue;
             }
 
-            printf("LAN_socket done.\r\n");
+            DEBUG_PRINTF("LAN_socket done.\r\n");
 
-            printf("LAN_init.\r\n");
+            DEBUG_PRINTF("LAN_init.\r\n");
             rtn = LAN_init(&LAN_node);
 
             LAN_set_network(&LAN_node, ip_addr, bc_addr, gw_addr, nm_addr, mac_addr);
@@ -683,7 +683,7 @@ static void LAN_app_task(void) {
 
             read_rtn = LAN_read(&LAN_node, LAN_packet);
             if (read_rtn > 0) {
-                printf("%d\r\n", read_rtn);
+                DEBUG_PRINTF("%d\r\n", read_rtn);
             }
 
             Thread::wait(10);
