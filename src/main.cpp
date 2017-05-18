@@ -77,29 +77,6 @@ Ticker ticker_leds;
 
 int8_t WDY_init = 0;
 
-void printbar(int length, int perc) {
-    for (int i=0; i<length; i++) {
-        if (perc > (i * 100 / length)) {
-            if (!i)
-                lcd.putc(1);
-            else if (i == length-1)
-                lcd.putc(5);
-            else
-                lcd.putc(3);
-        } else {
-            if (!i)
-                lcd.putc(0);
-            else if (i == length-1)
-                lcd.putc(4);
-            else
-                lcd.putc(2);
-        }
-    }
-}
-
-// UI
-Ticker ticker_leds;
-
 
 int main(void) {
 
