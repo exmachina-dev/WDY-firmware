@@ -1,0 +1,44 @@
+/*
+ * menu.h
+ * Copyright (C) 2017 Benoit Rapidel <benoit.rapidel+devs@exmachina.fr>
+ *
+ * Distributed under terms of the MIT license.
+ */
+
+#ifndef MENU_H
+#define MENU_H
+
+#include "mbed.h"
+#include <vector>
+
+#include "ui/actions.h"
+
+namespace LCD_UI {
+    class Menu;
+
+    class Item {
+        public:
+            Item(Action *_action_ptr, uint8_t _position, Menu *_child_menu, const char *_text); 
+
+            Action *action_ptr;
+            const char* text;
+            uint8_t position;
+            Menu *child_menu; 
+
+    };
+
+    class Menu {
+        public:
+            Menu(const char*);
+
+            vector<Item> items;
+            const char* menuID;
+
+            void addItem(Action *action, Menu *child_menu, const char* text);
+
+        private:
+            uint8_t _position;
+    };
+}
+
+#endif /* !MENU_H */

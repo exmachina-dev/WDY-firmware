@@ -1,9 +1,11 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#define MBED_CONF_APP_MEMTRACE
+
 // Global behaviour settings
 // -------------------------
-#define WDY_DEBUG           (0)
+#define WDY_DEBUG           (1)
 
 // Math constants
 // --------------

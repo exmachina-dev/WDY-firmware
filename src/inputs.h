@@ -12,10 +12,12 @@
 #include "pins.h"
 
 // Inputs
-DigitalIn drive_status(DRV_STS1);
-DigitalIn slowfeed_input(DRV_STS2);
-DigitalIn drum_limit(LIMIT_SW1);
-DigitalIn emergency_stop(EMERGENCY_STOP);
+InterruptIn button1(BUTTON1);
+InterruptIn button2(BUTTON2);
+InterruptIn button3(BUTTON3);
+InterruptIn button4(BUTTON4);
+InterruptIn button5(BUTTON5);
+InterruptIn button6(BUTTON6);
 
 
 #endif /* !INPUTS_H */

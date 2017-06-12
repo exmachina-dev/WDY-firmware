@@ -2,6 +2,8 @@
 #define WDY_HELPERS_H_
 
 
+#include <inet.h>
+#include <sys/types.h>
 #include <stdint.h>
 
 #include "CO_units.h"
@@ -33,6 +35,47 @@ typedef enum {
     WDY_STS_COMM_FAULT =        0x400,
     WDY_STS_FLIP_BIT =          0x800,
 } wdy_status_t;
+
+struct wdy_network_config_s {
+    bool dhcp;
+    in_addr ip_addr;
+    in_addr nm_addr;
+    in_addr gw_addr;
+};
+
+typedef wdy_network_config_s wdy_network_config_t;
+
+struct wdy_artnet_config_s {
+    uint8_t net;
+    uint8_t subnet;
+    uint8_t universe;
+    uint8_t dmx_addr;
+};
+
+typedef wdy_artnet_config_s wdy_artnet_config_t;
+
+struct wdy_screen_config_s {
+    uint8_t contrast;
+    uint8_t backlight;
+};
+
+typedef wdy_screen_config_s wdy_screen_config_t;
+
+struct wdy_config_s {
+    wdy_network_config_t network;
+    wdy_artnet_config_t artnet;
+    wdy_screen_config_t screen;
+};
+
+typedef struct wdy_config_s wdy_config_t;
+
+struct wdy_state_s {
+    int8_t init_state;
+    uint16_t status;
+    wdy_config_t config;
+};
+
+typedef struct wdy_state_s wdy_state_t;
 
 uint8_t map_DMX16_to_world(uint16_t DMXvalue, float *mvalue, int maxValue);
 

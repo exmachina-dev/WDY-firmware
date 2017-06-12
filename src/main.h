@@ -11,6 +11,7 @@
 
 #include "leds.h"
 #include "fans.h"
+#include "inputs.h"
 #include "watchdog.h"
 
 /* Artnet includes */
@@ -48,12 +49,29 @@ extern "C" {
 
 /* AC780 includes */
 #include "libAC780.h"
+#include "ui.h"
 
 #if defined(WDY_DEBUG) && (WDY_DEBUG != 0)
 #define DEBUG_PRINTF(...) (printf(__VA_ARGS__))
 #else
 #define DEBUG_PRINTF(...) (0)
 #endif
+
+
+
+// Encoder
+QEI encoder(QEI_INVERT);
+
+// Serial debug port
+Serial USBport(USBTX, USBRX);
+
+// LCD screen
+I2C i2c2(P0_10, P0_11);
+AC780 lcd(&i2c2, 0x78, P0_22, 0x5c);
+
+wdy_state_t WDY_STATE;
+
+#include "actions_cb.h"
 
 struct dmx_device_parameter_s {
     uint8_t command;

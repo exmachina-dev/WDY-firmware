@@ -51,7 +51,7 @@ uint8_t swout[4];
 
 artnet_node_t LAN_node;
 
-Thread LAN_app_thread(osPriorityAboveNormal, 1024 * 4);
+Thread LAN_app_thread(osPriorityAboveNormal, 1024 * 2);
 
 //
 // DMX device
@@ -60,62 +60,70 @@ dmx_device_union_t _lastDMXdevice;
 bool new_dmx_sig = false;
 
 
-// Encoder
-QEI encoder(QEI_INVERT);
-
-
-// Serial debug port
-Serial USBport(USBTX, USBRX);
-
-// LCD screen
-I2C i2c2(P0_10, P0_11);
-AC780 lcd(&i2c2, 0x78, P0_22, 0x5c);
-
 
 Thread UI_app_thread(osPriorityBelowNormal, 1024);
 Ticker ticker_leds;
 
-int8_t WDY_init = 0;
+volatile bool WDY_UI_MENU_FLAG;
+volatile bool WDY_UI_DOWN_FLAG;
+volatile bool WDY_UI_UP_FLAG;
+volatile bool WDY_UI_ENTER_FLAG;
 
 
 int main(void) {
+
+    USBport.baud(115200);
 
 #ifdef MBED_CONF_APP_MEMTRACE
     mbed_stats_heap_t heap_stats;
     mbed_mem_trace_set_callback(mbed_mem_trace_default_callback);
 #endif
 
+    for (int i=0; i<10; i++) {
+        led1 = !led1;
+        led2 = !led2;
+        led3 = !led3;
+        led4 = !led4;
+        can_led = !can_led;
+        err_led = !err_led;
+        Thread::wait(100);
+    }
+    /*
+    for (int i=0; i<100; i++) {
+        if (!button3.read()) {
+            led1 = !led1;
+            led2 = !led2;
+            led3 = !led3;
+            led4 = !led4;
+        }
+        can_led = !can_led;
+        err_led = !err_led;
+        Thread::wait(100);
+    }
+    */
+
     UI_app_thread.start(UI_app_task);
 
     LAN_eth = &_eth;
     LAN_packet = &_packet;
 
-    WDY_init = 5;
+    WDY_STATE.init_state = 5;
 
     CO_timer.start();
     ticker_leds.attach_us(&CO_leds_task, 10 * 1000); // 10 ms
 
-    USBport.baud(115200);
-
     wdog.kick(10); // First watchdog kick to trigger it
-
-    // I2C bus speed: 400 kHz
-    i2c2.frequency(400 * 1000);
 
     // Fans default speed
     fan_top = 1.0;
     fan_bot = 1.0;
 
-    WDY_init = 10;
+    WDY_STATE.init_state = 10;
 
     Thread::wait(200);
 
 
-    // Status led setup
-    led1.period(0.02);
-    led2.period(0.02);
-
-    WDY_init = 22;
+    WDY_STATE.init_state = 22;
 
     Thread::wait(200);
 
@@ -126,7 +134,7 @@ int main(void) {
     encoder.setPPR(WDY_ENCODER_PPR);
     encoder.setLinearFactor(WDY_ENCODER_FACTOR);
 
-    WDY_init = 31;
+    WDY_STATE.init_state = 31;
 
     Thread::wait(200);
 
@@ -135,7 +143,7 @@ int main(void) {
 
     LAN_app_thread.start(LAN_app_task);
 
-    WDY_init = 42;
+    WDY_STATE.init_state = 42;
 
 #ifdef MBED_CONF_APP_MEMTRACE
     mbed_stats_heap_get(&heap_stats);
@@ -178,7 +186,7 @@ int main(void) {
         }
         DEBUG_PRINTF(". \r\n");
 
-        WDY_init = 11;
+        WDY_STATE.init_state = 11;
 
 #ifdef MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
@@ -195,7 +203,7 @@ int main(void) {
         CANport->attach(&CO_CANInterruptHandler, CAN::TxIrq);
         DEBUG_PRINTF(".\r\n");
 
-        WDY_init = 38;
+        WDY_STATE.init_state = 38;
 
 #ifdef MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
@@ -210,7 +218,7 @@ int main(void) {
         CO_app_thread.start(CO_app_task);
         DEBUG_PRINTF(". \r\n");
 
-        WDY_init = 67;
+        WDY_STATE.init_state = 67;
 
 #ifdef MBED_CONF_APP_MEMTRACE
         mbed_stats_heap_get(&heap_stats);
@@ -229,7 +237,7 @@ int main(void) {
 
         DEBUG_PRINTF("done.\r\n\r\n");
 
-        WDY_init = 75;
+        WDY_STATE.init_state = 75;
 
         while(reset == CO_RESET_NOT) {
             // loop for normal program execution
@@ -244,7 +252,7 @@ int main(void) {
             // CANopen process
             reset = CO_process(CO, timer1msDiff, NULL);
             if (reset != CO_RESET_NOT) {
-                WDY_init = -1;
+                WDY_STATE.init_state = -1;
             }
 
             // Nonblocking application code may go here.
@@ -330,7 +338,7 @@ static void CO_app_task(void){
 
             while (err != 0) {
                 DEBUG_PRINTF("Connecting to drive\r\n");
-                WDY_init = 80;
+                WDY_STATE.init_state = 80;
                 CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
 
                 CO_ReturnError_t state = CO_sendNMTcommand(CO, CO_NMT_RESET_NODE, CO_DRV_NODEID);
@@ -340,7 +348,7 @@ static void CO_app_task(void){
                     continue;
                 }
 
-                WDY_init = 85;
+                WDY_STATE.init_state = 85;
 
                 Thread::wait(500);
 
@@ -350,7 +358,7 @@ static void CO_app_task(void){
                     continue;
                 }
 
-                WDY_init = 90;
+                WDY_STATE.init_state = 90;
                 Thread::wait(500);
 
                 err = MFE_connect(&node, 100);
@@ -359,7 +367,7 @@ static void CO_app_task(void){
                 CO->NMT->operatingState = CO_NMT_OPERATIONAL;
 
                 if (err == 0)
-                    WDY_init = 100;
+                    WDY_STATE.init_state = 100;
 
                 Thread::wait(50);
             }
@@ -542,6 +550,9 @@ static void CO_app_task(void){
             new_acc_sig = false;
             new_dec_sig = false;
 
+            // copy status to WDY_STATE.status
+            WDY_STATE.status = status;
+
             timerTempDiff = timer1msCopy - timerTempPrevious;
             if (timerTempDiff >= 500) {     // Adjust temperature according to drive temperature
                 err = MFE_get_temp(&node, &nd_temp);
@@ -626,12 +637,12 @@ static void LAN_app_task(void) {
                         bytes[i] = (uint8_t) values[i];
                 }
 
-                ip_addr.s_addr = (bytes[5] << 24) + (bytes[4] << 16) + ((bytes[3] + OEM_LO) << 8) + 0x02;
-                nm_addr.s_addr = 0x000000FF;
-                gw_addr.s_addr = 0x00000000;
-                strncpy(ip_str, inet_ntoa(ip_addr), sizeof(ip_str));
-                strncpy(nm_str, inet_ntoa(nm_addr), sizeof(nm_str));
-                strncpy(gw_str, inet_ntoa(gw_addr), sizeof(gw_str));
+                WDY_STATE.config.network.ip_addr.s_addr = (bytes[5] << 24) + (bytes[4] << 16) + ((bytes[3] + OEM_LO) << 8) + 0x02;
+                WDY_STATE.config.network.nm_addr.s_addr = 0x000000FF;
+                WDY_STATE.config.network.gw_addr.s_addr = 0x00000000;
+                strncpy(ip_str, inet_ntoa(WDY_STATE.config.network.ip_addr), sizeof(ip_str));
+                strncpy(nm_str, inet_ntoa(WDY_STATE.config.network.nm_addr), sizeof(nm_str));
+                strncpy(gw_str, inet_ntoa(WDY_STATE.config.network.gw_addr), sizeof(gw_str));
 
                 DEBUG_PRINTF("IP: %s\r\n", ip_str);
                 DEBUG_PRINTF("NM: %s\r\n", nm_str);
@@ -660,14 +671,14 @@ static void LAN_app_task(void) {
             LAN_sock = new UDPSocket();
 
             DEBUG_PRINTF("LAN_eth: %s %s\r\n", LAN_eth->get_ip_address(), LAN_eth->get_netmask());
-            inet_aton(LAN_eth->get_ip_address(), &ip_addr);
-            inet_aton(LAN_eth->get_netmask(), &nm_addr);
+            inet_aton(LAN_eth->get_ip_address(), &WDY_STATE.config.network.ip_addr);
+            inet_aton(LAN_eth->get_netmask(), &WDY_STATE.config.network.nm_addr);
 
-            bc_addr.s_addr = (uint32_t) ip_addr.s_addr & (uint32_t) nm_addr.s_addr;
-            bc_addr.s_addr |= (uint32_t) 0xffffffff & (uint32_t) ~nm_addr.s_addr;
+            bc_addr.s_addr = (uint32_t) WDY_STATE.config.network.ip_addr.s_addr & (uint32_t) WDY_STATE.config.network.nm_addr.s_addr;
+            bc_addr.s_addr |= (uint32_t) 0xffffffff & (uint32_t) ~WDY_STATE.config.network.nm_addr.s_addr;
 
-            DEBUG_PRINTF("LAN_eth: %s", inet_ntoa(ip_addr));
-            DEBUG_PRINTF(" %s", inet_ntoa(nm_addr));
+            DEBUG_PRINTF("LAN_eth: %s", inet_ntoa(WDY_STATE.config.network.ip_addr));
+            DEBUG_PRINTF(" %s", inet_ntoa(WDY_STATE.config.network.nm_addr));
             DEBUG_PRINTF(" %s\r\n", inet_ntoa(bc_addr));
 
             rtn = LAN_sock->open(LAN_eth);
@@ -712,8 +723,8 @@ static void LAN_app_task(void) {
             rtn = LAN_init(&LAN_node);
 
             LAN_set_network(&LAN_node, ip_addr, bc_addr, gw_addr, nm_addr, mac_addr);
-            LAN_set_port(&LAN_node, 0, 0);
-            LAN_set_dmx(&LAN_node, DMX_START, DMX_FOOTPRINT);
+            LAN_set_port(&LAN_node, WDY_STATE.config.artnet.net, (WDY_STATE.config.artnet.subnet << 4) + WDY_STATE.config.artnet.universe);
+            LAN_set_dmx(&LAN_node, WDY_STATE.config.artnet.dmx_addr, DMX_FOOTPRINT);
             LAN_set_dmx_callback(&LAN_node, &_dmx_cb);
             LAN_set_name(&LAN_node, WDY_SHORT_NAME, WDY_LONG_NAME);
 
@@ -739,9 +750,6 @@ void _dmx_cb(uint16_t port, uint8_t *dmx_data) {
     memcpy(&DMXdevice.data, dmx_data, DMX_FOOTPRINT);
     DMXdevice.parameter.speed = swapBytes16(DMXdevice.parameter.speed);
     DMXdevice.parameter.position = swapBytes16(DMXdevice.parameter.position);
-
-    led3 = (float)DMXdevice.parameter.speed / 0xFFFF;
-    led4 = (float)DMXdevice.parameter.position / 0xFFFF;
 
     if (memcmp(&_lastDMXdevice.data, &DMXdevice.data, DMX_FOOTPRINT)) {
         memcpy(&_lastDMXdevice.data, &DMXdevice.data, DMX_FOOTPRINT);
@@ -769,21 +777,44 @@ void printbar(int length, int perc) {
     }
 }
 
-
-void _topbar() {
+void menu_interrupt(void) {
+    WDY_UI_MENU_FLAG = true;
 }
 
-void _buttonsbar() {
-    char icons[] = {4, 3, 2, 5};
+void down_interrupt(void) {
+    WDY_UI_DOWN_FLAG = true;
+}
 
-    for (int b=0; b<4; b++) {
-        lcd.locate(3, 2 + b * 5);
-        lcd.putc(icons[b]);
-    }
+void up_interrupt(void) {
+    WDY_UI_UP_FLAG = true;
+}
+
+void enter_interrupt(void) {
+    WDY_UI_ENTER_FLAG = true;
 }
 
 static void UI_app_task(void) {
     bool _init = true;
+    uint8_t period_counter = 0;
+
+    // Status led setup
+    led1.period(0.02);
+    led2.period(0.02);
+    led3.period(0.02);
+    led4.period(0.02);
+
+    button2.mode(PullUp);
+    button3.mode(PullUp);
+    button4.mode(PullUp);
+    button5.mode(PullUp);
+
+    button2.fall(&enter_interrupt);
+    button3.fall(&down_interrupt);
+    button4.fall(&up_interrupt);
+    button5.fall(&menu_interrupt);
+
+    // I2C bus speed: 400 kHz
+    i2c2.frequency(400 * 1000);
 
     lcd.setBacklight(true);
     lcd.setContrast(0x0a);
@@ -798,6 +829,42 @@ static void UI_app_task(void) {
     lcd.printf("   Winch  Dynamic\n");
     lcd.printf("    by ExMachina");
 
+    using namespace LCD_UI;
+
+    Menu _root_menu("Main menu");
+
+    Menu _config_menu("Config");
+
+    Menu _network_menu("Network");
+    _network_menu.addItem(&set_action_dhcp, NULL, "DHCP");
+    _network_menu.addItem(NULL, NULL, "IP address");
+    _network_menu.addItem(NULL, NULL, "Netmask");
+    _network_menu.addItem(NULL, NULL, "Gateway");
+    _network_menu.addItem(NULL, &_config_menu, "--Back--");
+    _config_menu.addItem(NULL, &_network_menu, "Network");
+
+    Menu _artnet_menu("ArtNET");
+    _artnet_menu.addItem(&set_action_net, NULL, "Net");
+    _artnet_menu.addItem(&set_action_subnet, NULL, "Subnet");
+    _artnet_menu.addItem(&set_action_universe, NULL, "Universe");
+    _artnet_menu.addItem(&set_action_dmx_addr, NULL, "DMX address");
+    _artnet_menu.addItem(NULL, &_config_menu, "--Back--");
+    _config_menu.addItem(NULL, &_artnet_menu, "ArtNET");
+
+    Menu _screen_menu("Screen");
+    _screen_menu.addItem(&set_action_contrast, NULL, "Contrast");
+    _screen_menu.addItem(&set_action_backlight, NULL, "Backlight");
+    _screen_menu.addItem(NULL, &_config_menu, "--Back--");
+    _config_menu.addItem(NULL, &_screen_menu, "Screen");
+
+    _config_menu.addItem(NULL, &_root_menu, "--Back--");
+
+    _root_menu.addItem(&info_action, NULL, "Infos");
+    _root_menu.addItem(NULL, &_config_menu, "Config");
+    _root_menu.addItem(&about_action, NULL, "About");
+
+    UI ui(&lcd, &_root_menu);
+
     while (true) {
         while (_init) {
             led1 = 1;
@@ -807,9 +874,11 @@ static void UI_app_task(void) {
 
             lcd.locate(3, 1);
 
-            if (WDY_init < 0) {
-                lcd.printf("ERROR %d", WDY_init);
-            } else if (WDY_init >= 100) {
+            if (WDY_STATE.init_state < 0) {
+                lcd.printf("                    ");
+                lcd.locate(3, 1);
+                lcd.printf("ERROR %d", WDY_STATE.init_state);
+            } else if (WDY_STATE.init_state >= 100) {
                 _init = false;
                 printbar(18, 100);
                 Thread::wait(500);
@@ -828,19 +897,67 @@ static void UI_app_task(void) {
                 led3 = 0;
                 led4 = 0;
             } else {
-                printbar(18, WDY_init);
+                printbar(18, WDY_STATE.init_state);
             }
 
             Thread::wait(50);
         }
 
-        _topbar();
-        _buttonsbar();
-        lcd.locate(1, 0);
-        lcd.printf("%s       ", inet_ntoa(ip_addr));
-        lcd.locate(2, 0);
-        lcd.printf("%s       ", inet_ntoa(nm_addr));
+        // Update keys base on flags
+        if (WDY_UI_MENU_FLAG) {
+            ui.setKey(KEY_MENU);
+            WDY_UI_MENU_FLAG = false;
+        } else if (WDY_UI_UP_FLAG) {
+            ui.setKey(KEY_UP);
+            WDY_UI_UP_FLAG = false;
+        } else if (WDY_UI_DOWN_FLAG) {
+            ui.setKey(KEY_DOWN);
+            WDY_UI_DOWN_FLAG = false;
+        } else if (WDY_UI_ENTER_FLAG) {
+            ui.setKey(KEY_ENTER);
+            WDY_UI_ENTER_FLAG = false;
+        } else {
+            ui.setKey(KEY_NONE);
+        }
 
-        Thread::wait(250);
+        ui.update();
+
+        // Update leds
+        if (WDY_STATE.status != 0) {
+            ui.blink_code(&led3, WDY_STATE.status);
+        } else {
+            led3 = 0;
+        }
+        
+        led1 = ((float) (period_counter % 10)) / 10;
+
+        period_counter++;
+
+
+        /*
+        if (WDY_UI_MENU_FLAG || _display_menu) {
+            if (!_display_menu) {
+                _display_menu = true;
+                WDY_UI_MENU_FLAG = false;
+                lcd.clear();
+            } else if (WDY_UI_MENU_FLAG && _display_menu) {
+                _display_menu = false;
+                WDY_UI_MENU_FLAG = false;
+                continue;
+            }
+
+
+            ui.update();
+        } else {
+            lcd.locate(1, 0);
+            lcd.printf("%s       ", inet_ntoa(ip_addr));
+            lcd.locate(1, 17);
+            lcd.printf("%d", DMX_START);
+            lcd.locate(2, 0);
+            lcd.printf("%s       ", inet_ntoa(nm_addr));
+        }
+        */
+
+        Thread::wait(50);
     }
 }

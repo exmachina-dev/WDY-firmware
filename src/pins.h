@@ -28,6 +28,7 @@
 #define BUTTON3         P0_17
 #define BUTTON4         P0_18
 #define BUTTON5         P0_19
+#define BUTTON6         P0_20
 
 #define LCD_BACKLIGHT   P0_22
 
