@@ -79,29 +79,6 @@ int main(void) {
     mbed_mem_trace_set_callback(mbed_mem_trace_default_callback);
 #endif
 
-    for (int i=0; i<10; i++) {
-        led1 = !led1;
-        led2 = !led2;
-        led3 = !led3;
-        led4 = !led4;
-        can_led = !can_led;
-        err_led = !err_led;
-        Thread::wait(100);
-    }
-    /*
-    for (int i=0; i<100; i++) {
-        if (!button3.read()) {
-            led1 = !led1;
-            led2 = !led2;
-            led3 = !led3;
-            led4 = !led4;
-        }
-        can_led = !can_led;
-        err_led = !err_led;
-        Thread::wait(100);
-    }
-    */
-
     UI_app_thread.start(UI_app_task);
 
     LAN_eth = &_eth;
@@ -824,8 +801,10 @@ static void UI_app_task(void) {
     lcd.setUDC(4, UDC_bar_right_empty);
     lcd.setUDC(5, UDC_bar_right_full);
 
-    lcd.printf("   Winch  Dynamic\n");
-    lcd.printf("    by ExMachina");
+    lcd.locate(0, 3);
+    lcd.printf("Winch  Dynamic");
+    lcd.locate(1, 5);
+    lcd.printf("by ExMachina");
 
     using namespace LCD_UI;
 
