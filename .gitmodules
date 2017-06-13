@@ -14,3 +14,6 @@
 [submodule "lib/libAC780"]
 	path = lib/libAC780
 	url = git@git.exmachina.fr:libAC780.git
+[submodule "lib/libAT24Cxx_I2C"]
+	path = lib/libAT24Cxx_I2C
+	url = git@git.exmachina.fr:libAT24Cxx_I2C.git
