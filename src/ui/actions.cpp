@@ -71,11 +71,11 @@ void InfoAction::update() {
             break;
         case 1:
             lcd->locate(0, 0);
-            lcd->printf("State: % 3d     ", state->status);
+            lcd->printf("Err: % 3d     ", state->status);
             lcd->locate(1, 0);
-            lcd->printf("                    ");
+            lcd->printf("Pos: % 5.1f", state->position);
             lcd->locate(2, 0);
-            lcd->printf("                    ");
+            lcd->printf("Spd: % 5.1f", state->speed);
             break;
     }
 
@@ -99,9 +99,9 @@ void AboutAction::update() {
         return;
 
     lcd->locate(0, 0);
-    lcd->printf("Winch Dynamic\n");
-    lcd->printf("by ExMachina\n");
-    lcd->printf("Winch Dynamic\n");
+    lcd->printf("Winch Dynamic");
+    lcd->locate(1, 0);
+    lcd->printf("by ExMachina");
 
     last_key = current_key;
 }
