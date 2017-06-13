@@ -24,12 +24,14 @@ namespace LCD_UI {
             const char* text;
             uint8_t position;
             Menu *child_menu; 
-
     };
 
     class Menu {
         public:
             Menu(const char*);
+
+            Menu* parent() { return _parent; }
+            void parent(Menu *_menu) { _parent = _menu; }
 
             vector<Item> items;
             const char* menuID;
@@ -38,6 +40,7 @@ namespace LCD_UI {
 
         private:
             uint8_t _position;
+            Menu *_parent;
     };
 }
 

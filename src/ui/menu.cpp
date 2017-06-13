@@ -23,6 +23,8 @@ namespace LCD_UI {
     void Menu::addItem(Action* action, Menu *child_menu, const char* text) {
         Item item(action, (uint8_t) _position, child_menu, text);
         items.push_back(item);
+        if (child_menu != NULL)
+            child_menu->parent(this);
         _position++;
     }
 }
