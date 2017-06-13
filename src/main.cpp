@@ -865,6 +865,8 @@ static void UI_app_task(void) {
 
     UI ui(&lcd, &_root_menu);
 
+    ui.setDefaultAction(&info_action);
+
     while (true) {
         while (_init) {
             led1 = 1;

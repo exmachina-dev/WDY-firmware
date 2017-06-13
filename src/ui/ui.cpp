@@ -18,6 +18,7 @@ namespace LCD_UI {
         cursor_line = 0;
 
         active_action = NULL;
+        default_action = NULL;
 
         last_key = KEY_NONE;
         current_key = KEY_UNKNOWN;
@@ -177,6 +178,12 @@ namespace LCD_UI {
 
         if(active_action != NULL)
             active_action->setKey(current_key);
+    }
+
+    void UI::setDefaultAction(Action *_action) {
+        default_action = _action;
+        active_action = default_action;
+        active_action->start();
     }
 
     bool UI::display_menu(void) {

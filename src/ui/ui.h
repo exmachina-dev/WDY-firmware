@@ -21,7 +21,7 @@ namespace LCD_UI {
         public:
             UI(AC780 *lcd, Menu *root_menu);
             Menu *active_menu, *root_menu;
-            Action *active_action;
+            Action *default_action;
             AC780 *lcd;
 
             uint8_t menu_size;
@@ -34,12 +34,14 @@ namespace LCD_UI {
             void displayMenu(void);
             void displayButtonsBar(mode_e mode);
             void setKey(key_e _key);
+            void setDefaultAction(Action *_action);
 
             bool display_menu(void);
 
             void blink_code(PwmOut *led, uint16_t code);
 
         private:
+            Action *active_action;
             key_e last_key, current_key;
             bool _display_menu_flag;
 

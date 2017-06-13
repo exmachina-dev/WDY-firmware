@@ -72,6 +72,8 @@ typedef struct wdy_config_s wdy_config_t;
 struct wdy_state_s {
     int8_t init_state;
     uint16_t status;
+    float speed;
+    float position;
     wdy_config_t config;
 };
 
