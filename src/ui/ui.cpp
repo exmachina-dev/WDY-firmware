@@ -30,43 +30,61 @@ namespace LCD_UI {
     }
 
     void UI::update() {
-        switch (current_key) {
-            case KEY_UNKNOWN:
-                last_key = KEY_NONE; // Force update
-                break;
-            case KEY_NONE:
-                break;
-            case KEY_MENU:
-                if (last_key != current_key)
-                    if (active_menu == root_menu)
-                        _display_menu_flag = !_display_menu_flag;
-
-                break;
-            case KEY_UP:
-                if (last_key != current_key)
-                    moveUp();
-                break;
-            case KEY_DOWN:
-                if (last_key != current_key)
-                    moveDown();
-                break;
-            case KEY_ENTER:
-                if (last_key != current_key) {
-                    if (active_menu->items[cursor_pos].action_ptr != NULL)
-                        active_action = active_menu->items[cursor_pos].action_ptr;
-
-                    if (active_action != NULL && !active_action->is_running()) {  // Action not running
-                        active_action->start();
-                        _display_menu_flag = false;
+        if(!_display_menu_flag) { // Don't do anything in the menu
+            switch (current_key) {
+                case KEY_UNKNOWN:
+                    last_key = KEY_NONE; // Force update
+                    break;
+                default:
+                    current_key = KEY_UNKNOWN;
+            }
+        } else {
+            switch (current_key) {
+                case KEY_UNKNOWN:
+                    last_key = KEY_NONE; // Force update
+                    break;
+                case KEY_NONE:
+                case KEY_PLUS:
+                case KEY_MINUS:
+                    break;
+                case KEY_MENU:
+                    if (last_key != current_key) {
+                        if (active_menu == root_menu)
+                            _display_menu_flag = !_display_menu_flag;
+                        else
+                            active_menu = active_menu->parent();
+                            menu_size = active_menu->items.size();
+                            cursor_pos = 0;
                     }
+                    break;
+                case KEY_UP:
+                    if (last_key != current_key)
+                        moveUp();
+                    break;
+                case KEY_DOWN:
+                    if (last_key != current_key)
+                        moveDown();
+                    break;
+                case KEY_ENTER:
+                    if (last_key != current_key) {
+                        if (active_menu->items[cursor_pos].action_ptr != NULL)
+                            active_action = active_menu->items[cursor_pos].action_ptr;
 
-                    if (active_menu->items[cursor_pos].child_menu != NULL) {
-                        active_menu = active_menu->items[cursor_pos].child_menu;
-                        menu_size = active_menu->items.size();
-                        cursor_pos = 0;
+                        if (active_action != NULL && !active_action->is_running()) {  // Action not running
+                            active_action->start();
+                            _display_menu_flag = false;
+                        }
+
+                        if (active_menu->items[cursor_pos].child_menu != NULL) {
+                            active_menu = active_menu->items[cursor_pos].child_menu;
+                            menu_size = active_menu->items.size();
+                            cursor_pos = 0;
+                        }
                     }
-                }
-                break;
+                    break;
+                default:
+                    current_key = KEY_UNKNOWN;
+            }
         }
 
         if (active_action != NULL && active_action->is_done()) {
@@ -82,6 +100,8 @@ namespace LCD_UI {
             active_action->update();
             if (last_key != current_key)
                 displayButtonsBar(default_action->button_mode());
+        } else {
+            _display_menu_flag = true;
         }
 
 
