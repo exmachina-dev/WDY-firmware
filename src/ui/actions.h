@@ -43,7 +43,7 @@ namespace LCD_UI {
                 _running = false;
                 _done = true;
             }
-            char *var_name;
+            const char *var_name;
 
         protected:
             AC780 *lcd;
@@ -57,7 +57,7 @@ namespace LCD_UI {
     template <class T = uint8_t>
     class SetAction : public Action {
         public:
-            SetAction(AC780 *_lcd, char *_var_name, T *_var, type_e _type) : Action(_lcd) {
+            SetAction(AC780 *_lcd, const char *_var_name, T *_var, type_e _type) : Action(_lcd) {
                 var_name = _var_name;
                 var = *_var;
                 var_ptr = _var;
