@@ -191,7 +191,7 @@ namespace LCD_UI {
     }
 
     void UI::blink_code(PwmOut *led, uint16_t code) {
-        uint16_t _period = _cycles % code;
-        led->write(_period / code);
+        uint16_t n_cycle = _cycles % (4 * (code + 4));
+        led->write((n_cycle > 7) ? (((n_cycle-8) / 2) % 2) : 0);
     }
 }

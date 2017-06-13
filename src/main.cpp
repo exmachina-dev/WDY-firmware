@@ -266,7 +266,7 @@ int main(void) {
     // Flash all leds
     can_led = 1;
     //err_led = 1;
-    led1 = 1;
+    led4 = 1;
     //led2 = 1;
 
     // Terminate threads
@@ -571,8 +571,6 @@ static void CO_app_task(void){
                 timerTempPrevious = timer1msCopy;
                 led1 = !led1;
             }
-
-            led2 = !led2;
         } else {
             DEBUG_PRINTF("Waiting for CAN.\r\n");
             Thread::wait(1000);
@@ -926,12 +924,12 @@ static void UI_app_task(void) {
 
         // Update leds
         if (WDY_STATE.status != 0) {
-            ui.blink_code(&led3, WDY_STATE.status);
+            ui.blink_code(&led4, WDY_STATE.status);
         } else {
-            led3 = 0;
+            led4 = 0;
         }
-        
-        led1 = ((float) (period_counter % 10)) / 10;
+
+        led2 = ((float) (period_counter % 16)) / 16;
 
         period_counter++;
 
