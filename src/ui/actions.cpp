@@ -14,6 +14,7 @@ Action::Action(AC780 *_lcd) {
     lcd = _lcd;
     last_key = KEY_NONE;
     current_key = KEY_UNKNOWN;
+    _button_mode = MODE_EDIT;
 
     _running = false;
     _done = false;

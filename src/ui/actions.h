@@ -30,6 +30,7 @@ namespace LCD_UI {
             bool is_done() { return _done; }
 
             void setKey(key_e _key);
+            mode_e button_mode() { return _button_mode; }
 
             void start() {
                 _running = true;
@@ -48,6 +49,7 @@ namespace LCD_UI {
             AC780 *lcd;
 
             key_e last_key, current_key;
+            mode_e _button_mode;
             bool _running;
             bool _done;
     };
@@ -60,6 +62,7 @@ namespace LCD_UI {
                 var = *_var;
                 var_ptr = _var;
                 type = _type;
+                _button_mode = MODE_EDIT;
             }
 
             void update();
@@ -153,6 +156,7 @@ namespace LCD_UI {
             InfoAction(AC780 *_lcd, wdy_state_t *_state) : Action(_lcd) {
                 state = _state;
                 page = 0;
+                _button_mode = MODE_EDIT;
             }
 
             void update();
@@ -166,7 +170,9 @@ namespace LCD_UI {
 
     class AboutAction : public Action {
         public:
-            AboutAction(AC780 *_lcd) : Action(_lcd) {}
+            AboutAction(AC780 *_lcd) : Action(_lcd) {
+                _button_mode = MODE_NAV;
+            }
 
             void update();
     };

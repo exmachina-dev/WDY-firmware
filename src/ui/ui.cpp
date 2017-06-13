@@ -81,7 +81,7 @@ namespace LCD_UI {
         } else if (active_action != NULL && active_action->is_running()) {
             active_action->update();
             if (last_key != current_key)
-                displayButtonsBar(MODE_EDIT);
+                displayButtonsBar(default_action->button_mode());
         }
 
 
