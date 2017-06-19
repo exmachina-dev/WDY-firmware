@@ -40,12 +40,6 @@
 #define BRK_SENSOR1     P1_22
 #define BRK_SENSOR2     P1_25
 
-#define CTL_BRAKE       P1_22
-#define CTL_CLUTCH      P1_23
-#define CTL_FW_DIR      P1_24
-#define CTL_RW_DIR      P1_25
-#define CTL_PWM_MOT     P1_26
-
 #define ISP_RXD         P0_3
 #define ISP_TXD         P0_2
 #define USBRX           ISP_RXD
