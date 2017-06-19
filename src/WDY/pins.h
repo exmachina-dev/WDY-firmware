@@ -37,12 +37,10 @@
 #define FAN_P1          P2_0
 #define FAN_P2          P2_1
 
-#define DRV_STS1        P0_18
-#define DRV_STS2        P0_19
-#define TRIGG_INPUT1    P0_20
-#define TRIGG_INPUT2    P1_27 // Need to be removed in future, only there to fix a wiring error
-#define LIMIT_SW1       P0_21
-#define EMERGENCY_STOP  P0_22
+#define DRV_ENABLE      P1_26
+#define DRV_ERROR       P1_29
+#define BRK_SENSOR1     P1_22
+#define BRK_SENSOR2     P1_25
 
 #define CTL_BRAKE       P1_22
 #define CTL_CLUTCH      P1_23
@@ -55,7 +53,7 @@
 #define USBRX           ISP_RXD
 #define USBTX           ISP_TXD
 
-#define ADC_SLACK       P0_25
+#define ADC_LOADPIN     P0_25
 #define ADC_TEMP0       P0_24
 #define ADC_TEMP1       P0_23
 
