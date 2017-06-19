@@ -32,10 +32,8 @@
 
 #define LCD_BACKLIGHT   P0_22
 
-#define FAN_S1          P0_8
-#define FAN_S2          P0_9
-#define FAN_P1          P2_0
-#define FAN_P2          P2_1
+#define FAN_P1          P2_25
+#define FAN_P2          P3_26
 
 #define DRV_ENABLE      P1_26
 #define DRV_ERROR       P1_29
