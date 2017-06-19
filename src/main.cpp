@@ -1,4 +1,11 @@
 
+/*
+ * main.cpp
+ * Copyright (C) 2017 Benoit Rapidel <benoit.rapidel+devs@exmachina.fr>
+ *
+ * Distributed under terms of the MIT license.
+ */
+
 #include "main.h"
 
 #ifdef MBED_CONF_APP_MEMTRACE

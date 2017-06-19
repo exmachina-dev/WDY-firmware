@@ -1,3 +1,10 @@
+/*
+ * main.h
+ * Copyright (C) 2017 Benoit Rapidel <benoit.rapidel+devs@exmachina.fr>
+ *
+ * Distributed under terms of the MIT license.
+ */
+
 #ifndef MAIN_H_
 #define MAIN_H_
 
@@ -111,4 +118,4 @@ static void _dmx_cb(uint16_t port, uint8_t *data);
 
 static void UI_app_task(void);
 
-#endif
+#endif /* !MAIN_H_ */
