@@ -7,6 +7,15 @@
 #include <stdint.h>
 
 #include "CO_units.h"
+#include "AT24Cxx_I2C.h"
+
+#define WDY_EEPROM_DATA_SIZE        (22)
+#define WDY_EEPROM_CONF_SIZE        (20)
+#define WDY_EEPROM_START_ADDRESS    (1)
+
+#define WDY_EEPROM_VERSION          (1)
+#define WDY_EEPROM_STATE_BLANK      (0)
+#define WDY_EEPROM_STATE_PRESENT    (1)
 
 #define DMX_MAX_VALUE16     0xffff  // Value coded on two DMX channels
 #define DMX_MAX_VALUE8      0xff    // Value coded on two DMX channels
@@ -37,27 +46,28 @@ typedef enum {
 } wdy_status_t;
 
 struct wdy_network_config_s {
-    bool dhcp;
-    in_addr ip_addr;
-    in_addr nm_addr;
-    in_addr gw_addr;
-};
+    bool dhcp;          // 1
+    bool static_addr;           // 1
+    in_addr ip_addr;            // 4
+    in_addr nm_addr;            // 4
+    in_addr gw_addr;            // 4
+} __attribute__((packed));
 
 typedef wdy_network_config_s wdy_network_config_t;
 
 struct wdy_artnet_config_s {
-    uint8_t net;
-    uint8_t subnet;
-    uint8_t universe;
-    uint8_t dmx_addr;
-};
+    uint8_t net;                // 1
+    uint8_t subnet;                 // 1
+    uint8_t universe;               // 1
+    uint8_t dmx_addr;               // 1
+} __attribute__((packed));
 
 typedef wdy_artnet_config_s wdy_artnet_config_t;
 
 struct wdy_screen_config_s {
-    uint8_t contrast;
-    uint8_t backlight;
-};
+    uint8_t contrast;               // 1
+    uint8_t backlight;              // 1
+} __attribute__((packed));
 
 typedef wdy_screen_config_s wdy_screen_config_t;
 
@@ -65,7 +75,7 @@ struct wdy_config_s {
     wdy_network_config_t network;
     wdy_artnet_config_t artnet;
     wdy_screen_config_t screen;
-};
+} __attribute__((packed));
 
 typedef struct wdy_config_s wdy_config_t;
 
@@ -75,7 +85,20 @@ struct wdy_state_s {
     float speed;
     float position;
     wdy_config_t config;
-};
+} __attribute__((packed));
+
+struct wdy_eeprom_data_s {
+    unsigned char eeprom_version;               // 1
+    unsigned char eeprom_state;                 // 1
+    wdy_config_t config;
+} __attribute__((packed));
+
+typedef wdy_eeprom_data_s wdy_eeprom_data_t;
+
+typedef union {
+    unsigned char raw[WDY_EEPROM_DATA_SIZE];
+    wdy_eeprom_data_t data;
+} wdy_eeprom_t;
 
 typedef struct wdy_state_s wdy_state_t;
 
@@ -90,5 +113,9 @@ float length_to_drum_turns(float length);
 float length_to_drum_diameter(float length);
 
 float linear_to_rot(float lvalue, float diameter);
+
+bool WDY_eeprom_read_config(AT24CXX_I2C *eeprom, wdy_eeprom_data_t *config);
+bool WDY_eeprom_write_config(AT24CXX_I2C *eeprom, wdy_config_t *config);
+bool WDY_eeprom_erase_config(AT24CXX_I2C *eeprom);
 
 #endif // WDY_HELPERS_H_

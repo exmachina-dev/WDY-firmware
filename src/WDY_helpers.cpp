@@ -72,3 +72,49 @@ float linear_to_rot(float lvalue, float diameter) {
     return rot;
 #endif
 }
+
+Mutex wdy_eeprom_mutex;
+
+bool WDY_eeprom_read_config(AT24CXX_I2C *eeprom, wdy_eeprom_data_t *data) {
+    wdy_eeprom_t eedata;
+
+    wdy_eeprom_mutex.lock();
+    bool ret = eeprom->read(WDY_EEPROM_START_ADDRESS, eedata.raw, WDY_EEPROM_DATA_SIZE);
+    memcpy(data, &eedata.data, WDY_EEPROM_CONF_SIZE);
+    wdy_eeprom_mutex.unlock();
+
+    return ret;
+}
+
+bool WDY_eeprom_write_config(AT24CXX_I2C *eeprom, wdy_config_t *config) {
+    wdy_eeprom_t eedata;
+    memcpy(&eedata.data.config, config, WDY_EEPROM_DATA_SIZE);
+    eedata.data.eeprom_version = WDY_EEPROM_VERSION;
+    eedata.data.eeprom_state = WDY_EEPROM_STATE_PRESENT;
+
+    wdy_eeprom_mutex.lock();
+    bool ret = eeprom->write(WDY_EEPROM_START_ADDRESS, eedata.raw, WDY_EEPROM_DATA_SIZE);
+    for (uint8_t i = 0; i<WDY_EEPROM_DATA_SIZE; i++) {
+        printf("%d ", eedata.raw[i]);
+    }
+    wdy_eeprom_mutex.unlock();
+
+    return ret;
+}
+
+bool WDY_eeprom_erase_config(AT24CXX_I2C *eeprom) {
+    bool ret;
+
+    ret = eeprom->erase_memory(WDY_EEPROM_START_ADDRESS, WDY_EEPROM_DATA_SIZE);
+
+    wdy_eeprom_t eedata;
+    wdy_config_t config;
+    eedata.data.eeprom_version = WDY_EEPROM_VERSION;
+    eedata.data.eeprom_state = WDY_EEPROM_STATE_BLANK;
+
+    memcpy(&eedata.data.config, &config, WDY_EEPROM_CONF_SIZE);
+
+    ret = eeprom->write(WDY_EEPROM_START_ADDRESS, eedata.raw, WDY_EEPROM_DATA_SIZE);
+
+    return ret;
+}
