@@ -1,7 +1,7 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
-#include "config.h"
+#include "WDY/config.h"
 
 /* Mbed includes */
 #include "mbed.h"
