@@ -839,7 +839,8 @@ void save_func_cb(void) {
 
 static void UI_app_task(void) {
     bool _init = true;
-    uint8_t period_counter = 0;
+    uint16_t period_counter = 0;
+    uint8_t lcd_contrast = 0;
 
     // Status led setup
     led1.period(0.02);
@@ -861,7 +862,7 @@ static void UI_app_task(void) {
     i2c2.frequency(400 * 1000);
 
     lcd.setBacklight(true);
-    lcd.setContrast(0x0a);
+    lcd.setContrast(WDY_STATE.config.screen.contrast);
 
     lcd.setUDC(0, UDC_bar_left_empty);
     lcd.setUDC(1, UDC_bar_left_full);
@@ -913,6 +914,15 @@ static void UI_app_task(void) {
 
     ui.setDefaultAction(&info_action);
 
+    set_action_backlight.save_func_ptr = &save_func_cb;
+    set_action_contrast.save_func_ptr = &save_func_cb;
+
+    set_action_contrast.minimum = 0;
+    set_action_contrast.maximum = 50;
+    set_action_backlight.step = 5;
+    set_action_backlight.minimum = 5;
+    set_action_backlight.maximum = 60;
+
     while (true) {
         while (_init) {
             led1 = 1;
@@ -951,6 +961,9 @@ static void UI_app_task(void) {
             Thread::wait(50);
         }
 
+        if (WDY_UI_MENU_FLAG || WDY_UI_UP_FLAG || WDY_UI_DOWN_FLAG || WDY_UI_MENU_FLAG)
+            period_counter = 0;
+
         // Update keys base on flags
         if (WDY_UI_MENU_FLAG) {
             ui.setKey(KEY_MENU);
@@ -970,6 +983,17 @@ static void UI_app_task(void) {
 
         ui.update();
 
+        if (lcd_contrast != WDY_STATE.config.screen.contrast) {
+            lcd_contrast = WDY_STATE.config.screen.contrast;
+            lcd.setContrast(lcd_contrast);
+        }
+
+        // Turn off backlight after backlight period
+        if (period_counter > WDY_STATE.config.screen.backlight * (1000 / 50))
+            lcd.setBacklight(false);
+        else
+            lcd.setBacklight(true);
+
         // Update leds
         if (WDY_STATE.status != 0) {
             ui.blink_code(&led4, WDY_STATE.status);
@@ -978,6 +1002,7 @@ static void UI_app_task(void) {
         }
 
         led2 = ((float) (period_counter % 16)) / 16;
+        led3 = ((float) (period_counter % 8)) / 16;
 
         period_counter++;
 
