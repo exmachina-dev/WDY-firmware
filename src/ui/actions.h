@@ -63,7 +63,7 @@ namespace LCD_UI {
         public:
             SetAction(AC780 *_lcd, const char *_var_name, T *_var, type_e _type, bool _instant_update=false) : Action(_lcd) {
                 var_name = _var_name;
-                if (var != NULL) {
+                if (_var != NULL) {
                     var = *_var;
                     var_ptr = _var;
                 } else {
