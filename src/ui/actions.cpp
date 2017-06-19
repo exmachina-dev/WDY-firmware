@@ -71,11 +71,11 @@ void InfoAction::update() {
             break;
         case 1:
             lcd->locate(0, 0);
-            lcd->printf("Err: % 3d     ", state->status);
+            lcd->printf("Err: % 3d         ", state->status);
             lcd->locate(1, 0);
-            lcd->printf("Pos: % 5.1f", state->position);
+            lcd->printf("Pos: % 5.1f      ", state->position);
             lcd->locate(2, 0);
-            lcd->printf("Spd: % 5.1f", state->speed);
+            lcd->printf("Spd: % 5.1f      ", state->speed);
             break;
     }
 

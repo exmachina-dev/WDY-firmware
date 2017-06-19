@@ -32,14 +32,18 @@ namespace LCD_UI {
             void setKey(key_e _key);
             mode_e button_mode() { return _button_mode; }
 
+            void _start() {};
             void start() {
                 _running = true;
                 _done = false;
                 current_key = KEY_UNKNOWN;
                 lcd->clear();
+                _start();
             }
             void virtual update() = 0;
+            void _end() {};
             void end() {
+                _end();
                 _running = false;
                 _done = true;
             }
@@ -57,20 +61,45 @@ namespace LCD_UI {
     template <class T = uint8_t>
     class SetAction : public Action {
         public:
-            SetAction(AC780 *_lcd, const char *_var_name, T *_var, type_e _type) : Action(_lcd) {
+            SetAction(AC780 *_lcd, const char *_var_name, T *_var, type_e _type, bool _instant_update=false) : Action(_lcd) {
                 var_name = _var_name;
-                var = *_var;
-                var_ptr = _var;
+                if (var != NULL) {
+                    var = *_var;
+                    var_ptr = _var;
+                } else {
+                    var = 0;
+                    var_ptr = NULL;
+                }
                 type = _type;
                 _button_mode = MODE_EDIT;
+                instant_update = _instant_update;
+                save_func_ptr = NULL;
+
+                step = 1;
+                minimum = 0;
+                maximum = 255;
             }
 
+            void _start() {
+                if (var_ptr != NULL) {
+                    var = *var_ptr;
+                    old_var = var;
+                }
+            }
             void update();
+
+            void (*save_func_ptr)();
+
+            T maximum;
+            T minimum;
+            T step;
 
         private:
             T var;
+            T old_var;
             T *var_ptr;
             type_e type;
+            bool instant_update;
     };
 
     template <class T>
@@ -83,17 +112,30 @@ namespace LCD_UI {
                 break;
             case KEY_PLUS:
                 var++;
+                if (instant_update && var_ptr != NULL)
+                    *var_ptr = var;
                 break;
             case KEY_MINUS:
                 var--;
+                if (instant_update && var_ptr != NULL)
+                    *var_ptr = var;
                 break;
             case KEY_MENU:
-                var = *var_ptr;
+                if (var_ptr != NULL) {
+                    if (instant_update)
+                        *var_ptr = old_var;
+                    var = *var_ptr;
+                }
                 end();
                 return;
                 break;
             case KEY_ENTER:
-                *var_ptr = var;
+                if (var_ptr != NULL)
+                    *var_ptr = var;
+                if (save_func_ptr != NULL) {
+                    save_func_ptr();
+                    lcd->printf("SAVE");
+                }
                 end();
                 return;
                 break;
