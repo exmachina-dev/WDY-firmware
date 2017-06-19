@@ -134,7 +134,6 @@ namespace LCD_UI {
                     *var_ptr = var;
                 if (save_func_ptr != NULL) {
                     save_func_ptr();
-                    lcd->printf("SAVE");
                 }
                 end();
                 return;
