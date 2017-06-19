@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "helpers.h"
+#include "WDY/helpers.h"
 #include "config.h"
 
 #define _PI             WDY_PI
