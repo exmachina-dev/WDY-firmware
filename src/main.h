@@ -47,9 +47,12 @@ extern "C" {
 
 #include "QEI.h"
 
-/* AC780 includes */
+/* LCD UI includes */
 #include "libAC780.h"
 #include "ui.h"
+
+/* EEPROM includes */
+#include "AT24Cxx_I2C.h"
 
 #if defined(WDY_DEBUG) && (WDY_DEBUG != 0)
 #define DEBUG_PRINTF(...) (printf(__VA_ARGS__))
@@ -66,8 +69,13 @@ QEI encoder(QEI_INVERT);
 Serial USBport(USBTX, USBRX);
 
 // LCD screen
-I2C i2c2(P0_10, P0_11);
+I2C i2c2(I2C2_SDA, I2C2_SCL);
 AC780 lcd(&i2c2, 0x78, P0_22, 0x5c);
+
+// EEPROM
+I2C i2c0(I2C0_SDA, I2C0_SCL);
+AT24CXX_I2C eeprom(&i2c0, 0x50);
+wdy_eeprom_data_t eeprom_data;
 
 wdy_state_t WDY_STATE;
 

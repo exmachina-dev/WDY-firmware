@@ -97,8 +97,59 @@ int main(void) {
 
     WDY_STATE.init_state = 10;
 
-    Thread::wait(200);
+    bool ret = WDY_eeprom_read_config(&eeprom, &eeprom_data);
+    printf("RET %d", ret);
+    printf(" STS %d", eeprom_data.eeprom_state);
+    printf(" VER %d\r\n", eeprom_data.eeprom_version);
+    printf("SOF CFG %d\r\n", sizeof(wdy_config_t));
+    printf("SOF EEP %d\r\n", sizeof(wdy_eeprom_data_t));
 
+    if (eeprom_data.eeprom_state == WDY_EEPROM_STATE_BLANK || eeprom_data.eeprom_state == 255) {
+        WDY_eeprom_erase_config(&eeprom);
+
+        eeprom_data.config.screen.backlight = 10;
+        eeprom_data.config.screen.contrast = 0x0a;
+
+        eeprom_data.config.network.dhcp = false;
+        eeprom_data.config.network.static_addr = true;
+        eeprom_data.config.network.ip_addr.s_addr = 0x02000002;
+        eeprom_data.config.network.nm_addr.s_addr = 0x000000FF;
+        eeprom_data.config.network.gw_addr.s_addr = 0;
+
+        eeprom_data.config.artnet.net = 0;
+        eeprom_data.config.artnet.subnet = 0;
+        eeprom_data.config.artnet.universe = 0;
+        eeprom_data.config.artnet.dmx_addr = 16;
+
+        WDY_eeprom_write_config(&eeprom, &eeprom_data.config);
+
+        ret = WDY_eeprom_read_config(&eeprom, &eeprom_data);
+        printf("sNET DHC %d ", eeprom_data.config.network.dhcp);
+        printf("sNET STA %d ", eeprom_data.config.network.static_addr);
+        printf("sNET IPA %s ", inet_ntoa(eeprom_data.config.network.ip_addr));
+        printf("sNET NMA %s ", inet_ntoa(eeprom_data.config.network.nm_addr));
+        printf("sNET GWA %s\r\n", inet_ntoa(eeprom_data.config.network.gw_addr));
+        printf("sART NET %d ", eeprom_data.config.artnet.net);
+        printf("sART SUB %d ", eeprom_data.config.artnet.subnet);
+        printf("sART UNI %d ", eeprom_data.config.artnet.universe);
+        printf("sART DMX %d\r\n", eeprom_data.config.artnet.dmx_addr);
+        printf("sSCR CTR %d ", eeprom_data.config.screen.contrast);
+        printf("sSCR BCK %d\r\n", eeprom_data.config.screen.backlight);
+    } else {
+        printf("NET DHC %d ", eeprom_data.config.network.dhcp);
+        printf("NET STA %d ", eeprom_data.config.network.static_addr);
+        printf("NET IPA %s ", inet_ntoa(eeprom_data.config.network.ip_addr));
+        printf("NET NMA %s ", inet_ntoa(eeprom_data.config.network.nm_addr));
+        printf("NET GWA %s\r\n", inet_ntoa(eeprom_data.config.network.gw_addr));
+        printf("ART NET %d ", eeprom_data.config.artnet.net);
+        printf("ART SUB %d ", eeprom_data.config.artnet.subnet);
+        printf("ART UNI %d ", eeprom_data.config.artnet.universe);
+        printf("ART DMX %d\r\n", eeprom_data.config.artnet.dmx_addr);
+        printf("SCR CTR %d ", eeprom_data.config.screen.contrast);
+        printf("SCR BCK %d\r\n", eeprom_data.config.screen.backlight);
+
+    }
+    memcpy(&WDY_STATE.config, &eeprom_data.config, WDY_EEPROM_CONF_SIZE);
 
     WDY_STATE.init_state = 22;
 
@@ -599,22 +650,36 @@ static void LAN_app_task(void) {
             char nm_str[14];
             char gw_str[14];
 
-            LAN_eth->set_dhcp(dhcp);
-            if (!dhcp) {
-                DEBUG_PRINTF("MAC: %s\r\n", LAN_eth->get_mac_address());
-                unsigned int values[6];
-                uint8_t bytes[6];
-                if( 6 == sscanf(LAN_eth->get_mac_address(), "%x:%x:%x:%x:%x:%x",
-                            &values[0], &values[1], &values[2],
-                            &values[3], &values[4], &values[5] ) ) {
-                    /* convert to uint8_t */
-                    for(uint8_t i = 0; i < 6; ++i )
-                        bytes[i] = (uint8_t) values[i];
-                }
+            printf("NET DHC %d ", WDY_STATE.config.network.dhcp);
+            printf("NET STA %d ", WDY_STATE.config.network.static_addr);
+            printf("NET IPA %x %s ", WDY_STATE.config.network.ip_addr.s_addr, inet_ntoa(WDY_STATE.config.network.ip_addr));
+            printf("NET NMA %x %s ", WDY_STATE.config.network.nm_addr.s_addr, inet_ntoa(WDY_STATE.config.network.nm_addr));
+            printf("NET GWA %x %s\r\n", WDY_STATE.config.network.gw_addr.s_addr, inet_ntoa(WDY_STATE.config.network.gw_addr));
+            printf("ART NET %d ", WDY_STATE.config.artnet.net);
+            printf("ART SUB %d ", WDY_STATE.config.artnet.subnet);
+            printf("ART UNI %d ", WDY_STATE.config.artnet.universe);
+            printf("ART DMX %d\r\n", WDY_STATE.config.artnet.dmx_addr);
+            printf("SCR CTR %d ", WDY_STATE.config.screen.contrast);
+            printf("SCR BCK %d\r\n", WDY_STATE.config.screen.backlight);
 
-                WDY_STATE.config.network.ip_addr.s_addr = (bytes[5] << 24) + (bytes[4] << 16) + ((bytes[3] + OEM_LO) << 8) + 0x02;
-                WDY_STATE.config.network.nm_addr.s_addr = 0x000000FF;
-                WDY_STATE.config.network.gw_addr.s_addr = 0x00000000;
+            LAN_eth->set_dhcp(WDY_STATE.config.network.dhcp);
+            if (!WDY_STATE.config.network.dhcp) {
+                if (!WDY_STATE.config.network.static_addr) { // Auto generated network configuration
+                    DEBUG_PRINTF("MAC: %s\r\n", LAN_eth->get_mac_address());
+                    unsigned int values[6];
+                    uint8_t bytes[6];
+                    if( 6 == sscanf(LAN_eth->get_mac_address(), "%x:%x:%x:%x:%x:%x",
+                                &values[0], &values[1], &values[2],
+                                &values[3], &values[4], &values[5] ) ) {
+                        /* convert to uint8_t */
+                        for(uint8_t i = 0; i < 6; ++i )
+                            bytes[i] = (uint8_t) values[i];
+                    }
+
+                    WDY_STATE.config.network.ip_addr.s_addr = (bytes[5] << 24) + (bytes[4] << 16) + ((bytes[3] + OEM_LO) << 8) + 0x02;
+                    WDY_STATE.config.network.nm_addr.s_addr = 0x000000FF;
+                    WDY_STATE.config.network.gw_addr.s_addr = 0x00000000;
+                }
                 strncpy(ip_str, inet_ntoa(WDY_STATE.config.network.ip_addr), sizeof(ip_str));
                 strncpy(nm_str, inet_ntoa(WDY_STATE.config.network.nm_addr), sizeof(nm_str));
                 strncpy(gw_str, inet_ntoa(WDY_STATE.config.network.gw_addr), sizeof(gw_str));
@@ -766,6 +831,10 @@ void up_interrupt(void) {
 
 void enter_interrupt(void) {
     WDY_UI_ENTER_FLAG = true;
+}
+
+void save_func_cb(void) {
+    WDY_eeprom_write_config(&eeprom, &WDY_STATE.config);
 }
 
 static void UI_app_task(void) {
