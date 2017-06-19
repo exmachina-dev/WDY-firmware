@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "WDY_helpers.h"
+#include "helpers.h"
 #include "config.h"
 
 #define _PI             WDY_PI
@@ -38,6 +38,27 @@ uint8_t map_DMXcommand_to_command(uint8_t DMXcommand, wdy_command_t *mcommand) {
     memcpy(mcommand, &_cmd, sizeof(uint8_t));
 
     return 0;
+}
+
+float map(int from_val1, int from_val2, int to_val1, int to_val2, float value) {
+    float res = 0.0;
+    res = to_val1 + (float) ((value-from_val1)/(from_val2-from_val1)) * (float) (to_val2-to_val1);
+
+    // Don't clamp to to_val1 and to_val2, check to_val2 < res < to_val1 also
+    if (res > (float) to_val1 && res > (float) to_val2) {
+        if ((float) to_val2 > (float) to_val1)
+            return (float) to_val2;
+        else
+            return (float) to_val1;
+    }
+    else if (res < (float) to_val2 && res < (float) to_val1) {
+        if ((float) to_val2 < (float) to_val1)
+            return (float) to_val2;
+        else
+            return (float) to_val1;
+    }
+
+    return res;
 }
 
 float length_to_drum_turns(float length) {

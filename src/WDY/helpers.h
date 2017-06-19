@@ -108,6 +108,8 @@ uint8_t map_DMX8_to_world(uint8_t DMXvalue, float *mvalue, int maxValue);
 
 uint8_t map_DMXcommand_to_command(uint8_t DMXcommand, wdy_command_t *mcommand);
 
+float map(int from_val1, int from_val2, int to_val1, int to_val2, float value);
+
 float length_to_drum_turns(float length);
 
 float length_to_drum_diameter(float length);

@@ -9,9 +9,9 @@
 
 /* Specific includes */
 
-#include "leds.h"
-#include "fans.h"
-#include "inputs.h"
+#include "WDY/leds.h"
+#include "WDY/fans.h"
+#include "WDY/inputs.h"
 #include "watchdog.h"
 
 /* Artnet includes */
@@ -38,7 +38,7 @@ extern "C" {
 
 #include "MFE_helpers.h"
 
-#include "WDY_helpers.h"
+#include "WDY/helpers.h"
 
 #define TMR_TASK_INTERVAL   (1000)  // Interval of tmrTask thread in microseconds
 #define INCREMENT_1MS(var)  (var++) // Increment 1ms variable in tmrTask

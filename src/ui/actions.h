@@ -11,7 +11,7 @@
 #include "mbed.h"
 #include "libAC780.h"
 
-#include "WDY_helpers.h"
+#include "WDY/helpers.h"
 #include "common.h"
 
 namespace LCD_UI {
