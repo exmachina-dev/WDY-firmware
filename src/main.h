@@ -19,6 +19,7 @@
 #include "WDY/leds.h"
 #include "WDY/fans.h"
 #include "WDY/inputs.h"
+#include "WDY/loadpin.h"
 #include "watchdog.h"
 
 /* Artnet includes */
