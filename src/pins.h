@@ -13,7 +13,7 @@
 #include "PinNames.h"
 #include "mbed.h"
 
-#define LED1            P1_21
+#define LED1            P0_9
 #define LED2            P1_18
 #define LED3            NC
 #define LED4            NC
