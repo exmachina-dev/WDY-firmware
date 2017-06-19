@@ -1,7 +1,7 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-#define MBED_CONF_APP_MEMTRACE
+// #define MBED_CONF_APP_MEMTRACE
 
 // Global behaviour settings
 // -------------------------
