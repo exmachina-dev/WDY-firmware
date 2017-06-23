@@ -442,16 +442,48 @@ static void CO_app_task(void){
             }
 
 
-            // Update drive status
-            if (!(status & WDY_STS_COMM_FAULT)) {
-                err = MFE_get_status(&node, &nd_sts);
-                if (err != 0) {
-                    DEBUG_PRINTF("get sts: %d\r\n", err);
-                    status |= WDY_STS_COMM_FAULT;
-                    continue;
-                } else {
-                    status &= !WDY_STS_COMM_FAULT;
+            err = MFE_get_status(&node, &nd_sts);
+            if (err != 0) {
+                DEBUG_PRINTF("get sts: %d\r\n", err);
+                status = ADD_FLAG(status, WDY_STS_COMM_FAULT);
+                continue;
+            } else {
+                status = REMOVE_FLAG(status, WDY_STS_COMM_FAULT);
+
+                if (!drive_enable.read() && CHECK_FLAG(nd_sts.to_int, MFE_STS_ENABLED)) {
+                    status = ADD_FLAG(status, WDY_STS_ENABLED);
+                } else
+                    status = REMOVE_FLAG(status, WDY_STS_ENABLED);
+
+                if (brake_sensor1.read() || brake_sensor2.read() || CHECK_FLAG(nd_sts.to_int, MFE_STS_BRAKE_ACTIVE)) {
+                    status = ADD_FLAG(status, WDY_STS_BRAKE_ACTIVE);
+                    DEBUG_PRINTF("BRAKE %d %d %d\r\n", brake_sensor1.read(), brake_sensor2.read(), CHECK_FLAG(nd_sts.to_int, MFE_STS_BRAKE_ACTIVE));
                 }
+                else {
+                    status = REMOVE_FLAG(status, WDY_STS_BRAKE_ACTIVE);
+                }
+
+                if (CHECK_FLAG(nd_sts.to_int, MFE_STS_HARD_LIMIT_FW))
+                    status = ADD_FLAG(status, WDY_STS_HARD_LIMIT_FW);
+                else
+                    status = REMOVE_FLAG(status, WDY_STS_HARD_LIMIT_FW);
+
+                if (CHECK_FLAG(nd_sts.to_int, MFE_STS_HARD_LIMIT_RW))
+                    status = ADD_FLAG(status, WDY_STS_HARD_LIMIT_RW);
+                else
+                    status = REMOVE_FLAG(status, WDY_STS_HARD_LIMIT_RW);
+
+                if (CHECK_FLAG(nd_sts.to_int, MFE_STS_SOFT_LIMIT_FW))
+                    status = ADD_FLAG(status, WDY_STS_SOFT_LIMIT_FW);
+                else
+                    status = REMOVE_FLAG(status, WDY_STS_SOFT_LIMIT_FW);
+
+                if (CHECK_FLAG(nd_sts.to_int, MFE_STS_SOFT_LIMIT_RW))
+                    status = ADD_FLAG(status, WDY_STS_SOFT_LIMIT_RW);
+                else
+                    status = REMOVE_FLAG(status, WDY_STS_SOFT_LIMIT_RW);
+
+                DEBUG_PRINTF("drv sts: %d %d\r\n", nd_sts.to_int, status);
             }
 
 
@@ -467,8 +499,8 @@ static void CO_app_task(void){
                     nd_cmd.to_int = MFE_CMD_HOME;
                     err = MFE_set_command(&node, &nd_cmd);
 
-                    status = status | WDY_STS_HOME_IN_PROGRESS;
-                    status = status & !WDY_STS_HOMED;
+                    status = ADD_FLAG(status, WDY_STS_HOME_IN_PROGRESS);
+                    status = REMOVE_FLAG(status, WDY_STS_HOMED);
                 } else if (cmd_command == WDY_CMD_HOME_ENCODER) {
                     encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Reset encoder position
                 } else {  // WDY_CMD_NONE
@@ -477,7 +509,7 @@ static void CO_app_task(void){
                 }
 
                 if (err != 0) {
-                    status = status | WDY_STS_COMM_FAULT;
+                    status = ADD_FLAG(status, WDY_STS_COMM_FAULT);
                     continue;
                 }
             }
@@ -516,7 +548,7 @@ static void CO_app_task(void){
                     err = MFE_set_position(&node, &nd_pos);
 
                     if (err != 0) {
-                        status |= WDY_STS_COMM_FAULT;
+                        status = ADD_FLAG(status, WDY_STS_COMM_FAULT);
                         continue;
                     }
 
@@ -555,15 +587,14 @@ static void CO_app_task(void){
 
                     homing_time = 0;
 
-                    if (nd_sts.to_int & MFE_STS_UNPOWERED) {
-                        status |= WDY_STS_UNPOWERED;
-                    }
+                    if (CHECK_FLAG(nd_sts.to_int, MFE_STS_UNPOWERED))
+                        status = ADD_FLAG(status, WDY_STS_UNPOWERED);
 
-                    status |= WDY_STS_HOME_TIMEOUT;
-                } else if (nd_sts.to_int & MFE_STS_HOME_TIMEOUT) {
+                    status = ADD_FLAG(status, WDY_STS_HOME_TIMEOUT);
+                } else if (CHECK_FLAG(nd_sts.to_int, MFE_STS_HOME_TIMEOUT)) {
                     DEBUG_PRINTF("HOM htime %d timeout\r\n", homing_time);
 
-                    status |= WDY_STS_HOME_TIMEOUT;
+                    status = ADD_FLAG(status, WDY_STS_HOME_TIMEOUT);
                 }
             } else {
                 enc_position = encoder.getPosition();

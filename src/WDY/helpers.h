@@ -20,6 +20,10 @@
 #define DMX_MAX_VALUE16     0xffff  // Value coded on two DMX channels
 #define DMX_MAX_VALUE8      0xff    // Value coded on two DMX channels
 
+#define CHECK_FLAG(value, flag) ((value & flag) == flag)
+#define ADD_FLAG(value, flag) (value | flag)
+#define REMOVE_FLAG(value, flag) (value & ~flag)
+
 typedef enum {
     WDY_CMD_NONE =              0x00,
     WDY_CMD_ENABLE =            0x01,
