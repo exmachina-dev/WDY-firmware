@@ -11,8 +11,11 @@
 #include "mbed.h"
 #include "pins.h"
 
-#define WDY_ADC_TO_VOLTS_FACTOR         (1)
+#define WDY_ADC_TO_MILLIVOLTS_RANGE         3300
+#define WDY_MV_TO_LOADPIN_V_FACTOR          662.269
+#define WDY_LOADPIN_V_T_NEWTONS_FACTOR      100
+#define WDY_NEWTONS_TO_LOAD_FACTOR          0.9
 
-float read_loadpin(void);
+float read_loadpin(AnalogIn *adc);
 
 #endif /* !LOADPIN_H */
