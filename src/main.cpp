@@ -224,7 +224,7 @@ int main(void) {
             DEBUG_PRINTF(" size of OD_ROM: %d\r\n", sizeof(sCO_OD_ROM));
             DEBUG_PRINTF(" size of OD_EEPROM: %d\r\n", sizeof(sCO_OD_EEPROM));
             while(1);
-                CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err);
+            CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err);
         }
         DEBUG_PRINTF(". \r\n");
 
@@ -446,9 +446,9 @@ static void CO_app_task(void){
                 map_DMX8_to_world(raw_decel, &cmd_decel, WDY_MAX_DECEL);
 
                 DEBUG_PRINTF("DMX cmd %d\t pos %d spd %d acc %d dec %d\r\n",
-                      raw_command, raw_position, raw_speed, raw_accel, raw_decel);
+                        raw_command, raw_position, raw_speed, raw_accel, raw_decel);
                 DEBUG_PRINTF("REAL cmd %d\t pos %f spd %f acc %f dec %f\r\n",
-                      cmd_command, cmd_position, cmd_speed, cmd_accel, cmd_decel);
+                        cmd_command, cmd_position, cmd_speed, cmd_accel, cmd_decel);
 
                 new_dmx_sig = false;                    // Reset signal
 
@@ -1083,31 +1083,6 @@ static void UI_app_task(void) {
         led3 = ((float) (period_counter % 8)) / 16;
 
         period_counter++;
-
-
-        /*
-        if (WDY_UI_MENU_FLAG || _display_menu) {
-            if (!_display_menu) {
-                _display_menu = true;
-                WDY_UI_MENU_FLAG = false;
-                lcd.clear();
-            } else if (WDY_UI_MENU_FLAG && _display_menu) {
-                _display_menu = false;
-                WDY_UI_MENU_FLAG = false;
-                continue;
-            }
-
-
-            ui.update();
-        } else {
-            lcd.locate(1, 0);
-            lcd.printf("%s       ", inet_ntoa(ip_addr));
-            lcd.locate(1, 17);
-            lcd.printf("%d", DMX_START);
-            lcd.locate(2, 0);
-            lcd.printf("%s       ", inet_ntoa(nm_addr));
-        }
-        */
 
         Thread::wait(50);
     }
