@@ -345,6 +345,8 @@ static void CO_app_task(void){
     float real_speed;
     float real_position;
 
+    float load;
+
     float cmd_position = 0;
     float cmd_speed = 0;
     float cmd_accel = 0;
@@ -627,7 +629,10 @@ static void CO_app_task(void){
             } else {
                 enc_position = encoder.getPosition();
                 enc_speed = encoder.getSpeed();
-                DEBUG_PRINTF("ENC mspd %f mpos %f\r\n", enc_speed, enc_position);
+
+                // Get load
+                load = read_loadpin(&adc_loadpin);
+                DEBUG_PRINTF("ENC mspd %f mpos %f load %f\r\n", enc_speed, enc_position, load);
             }
 
             // store commands
@@ -658,6 +663,7 @@ static void CO_app_task(void){
                     fan_bot = 0.50 + (float)((_temp.to_float / 50.0) * 0.50);
                     DEBUG_PRINTF("TEMP tmp %f f1 %f f2 %f\r\n", _temp.to_float, (float) fan_top, (float) fan_bot);
                     DEBUG_PRINTF("TEMP tmp0 %f tmp1 %f\r\n", adc_temp0.read(), adc_temp1.read());
+                    DEBUG_PRINTF("LOAD %f %f\r\n", adc_loadpin.read(), read_loadpin(&adc_loadpin));
                 } else {
                     fan_top = 1.0;
                     fan_bot = 1.0;
