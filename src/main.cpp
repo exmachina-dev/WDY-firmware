@@ -833,7 +833,13 @@ static void LAN_app_task(void) {
             DEBUG_PRINTF("LAN_init.\r\n");
             rtn = LAN_init(&LAN_node);
 
-            LAN_set_network(&LAN_node, ip_addr, bc_addr, gw_addr, nm_addr, mac_addr);
+            LAN_set_network(&LAN_node,
+                    WDY_STATE.config.network.ip_addr,
+                    bc_addr,
+                    WDY_STATE.config.network.gw_addr,
+                    WDY_STATE.config.network.nm_addr,
+                    mac_addr);
+
             LAN_set_port(&LAN_node, WDY_STATE.config.artnet.net, (WDY_STATE.config.artnet.subnet << 4) + WDY_STATE.config.artnet.universe);
             LAN_set_dmx(&LAN_node, WDY_STATE.config.artnet.dmx_addr, DMX_FOOTPRINT);
             LAN_set_dmx_callback(&LAN_node, &_dmx_cb);
