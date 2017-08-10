@@ -719,9 +719,9 @@ static void LAN_app_task(void) {
 
         while (rtn != 0) {
             DEBUG_PRINTF("LAN_set_network\r\n");
-            char ip_str[14];
-            char nm_str[14];
-            char gw_str[14];
+            char ip_str[15];
+            char nm_str[15];
+            char gw_str[15];
 
             printf("NET DHC %d ", WDY_STATE.config.network.dhcp);
             printf("NET STA %d ", WDY_STATE.config.network.static_addr);
@@ -735,21 +735,19 @@ static void LAN_app_task(void) {
             printf("SCR CTR %d ", WDY_STATE.config.screen.contrast);
             printf("SCR BCK %d\r\n", WDY_STATE.config.screen.backlight);
 
+            DEBUG_PRINTF("MAC: %s\r\n", LAN_eth->get_mac_address());
+            unsigned int values[6];
+            if( 6 == sscanf(LAN_eth->get_mac_address(), "%x:%x:%x:%x:%x:%x",
+                        &values[0], &values[1], &values[2],
+                        &values[3], &values[4], &values[5] ) ) {
+                /* convert to uint8_t */
+                for(uint8_t i = 0; i < 6; ++i )
+                    mac_addr[i] = (uint8_t) values[i];
+            }
+
             LAN_eth->set_dhcp(WDY_STATE.config.network.dhcp);
             if (!WDY_STATE.config.network.dhcp) {
-                if (!WDY_STATE.config.network.static_addr) { // Auto generated network configuration
-                    DEBUG_PRINTF("MAC: %s\r\n", LAN_eth->get_mac_address());
-                    unsigned int values[6];
-                    uint8_t bytes[6];
-                    if( 6 == sscanf(LAN_eth->get_mac_address(), "%x:%x:%x:%x:%x:%x",
-                                &values[0], &values[1], &values[2],
-                                &values[3], &values[4], &values[5] ) ) {
-                        /* convert to uint8_t */
-                        for(uint8_t i = 0; i < 6; ++i )
-                            bytes[i] = (uint8_t) values[i];
-                    }
-
-                    WDY_STATE.config.network.ip_addr.s_addr = (bytes[5] << 24) + (bytes[4] << 16) + ((bytes[3] + OEM_LO) << 8) + 0x02;
+                    WDY_STATE.config.network.ip_addr.s_addr = (mac_addr[5] << 24) + (mac_addr[4] << 16) + ((mac_addr[3] + OEM_LO) << 8) + 0x02;
                     WDY_STATE.config.network.nm_addr.s_addr = 0x000000FF;
                     WDY_STATE.config.network.gw_addr.s_addr = 0x00000000;
                 }
