@@ -514,7 +514,7 @@ static void CO_app_task(void){
 
                     status = status | WDY_STS_ENABLED;
                 } else if (cmd_command == WDY_CMD_HOME) {
-                    nd_cmd.to_int = MFE_CMD_HOME;
+                    nd_cmd.to_int = MFE_CMD_ENABLE | MFE_CMD_HOME;
                     err = MFE_set_command(&node, &nd_cmd);
 
                     status = ADD_FLAG(status, WDY_STS_HOME_IN_PROGRESS);
