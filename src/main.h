@@ -120,4 +120,14 @@ static void _dmx_cb(uint16_t port, uint8_t *data);
 
 static void UI_app_task(void);
 
+// static buffer for the error strings
+char wdy_init_text[18];
+
+void wdy_init_msg(const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(wdy_init_text, sizeof(wdy_init_text), fmt, ap);
+  va_end(ap);
+}
+
 #endif /* !MAIN_H_ */

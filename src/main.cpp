@@ -91,6 +91,7 @@ int main(void) {
     LAN_eth = &_eth;
     LAN_packet = &_packet;
 
+    wdy_init_msg("Timer and fans");
     WDY_STATE.init_state = 5;
 
     CO_timer.start();
@@ -102,6 +103,7 @@ int main(void) {
     fan_top = 1.0;
     fan_bot = 1.0;
 
+    wdy_init_msg("Reading config");
     WDY_STATE.init_state = 10;
 
     bool ret = WDY_eeprom_read_config(&eeprom, &eeprom_data);
@@ -158,6 +160,7 @@ int main(void) {
     }
     memcpy(&WDY_STATE.config, &eeprom_data.config, WDY_EEPROM_CONF_SIZE);
 
+    wdy_init_msg("Encoder");
     WDY_STATE.init_state = 22;
 
     Thread::wait(200);
@@ -169,6 +172,7 @@ int main(void) {
     encoder.setPPR(WDY_ENCODER_PPR);
     encoder.setLinearFactor(WDY_ENCODER_FACTOR);
 
+    wdy_init_msg("ArtNET");
     WDY_STATE.init_state = 31;
 
     Thread::wait(200);
@@ -178,6 +182,7 @@ int main(void) {
 
     LAN_app_thread.start(LAN_app_task);
 
+    wdy_init_msg("CANopen");
     WDY_STATE.init_state = 42;
 
 #ifdef MBED_CONF_APP_MEMTRACE
@@ -221,6 +226,7 @@ int main(void) {
         }
         DEBUG_PRINTF(". \r\n");
 
+        wdy_init_msg("Starting comm");
         WDY_STATE.init_state = 11;
 
 #ifdef MBED_CONF_APP_MEMTRACE
@@ -238,6 +244,7 @@ int main(void) {
         CANport->attach(&CO_CANInterruptHandler, CAN::TxIrq);
         DEBUG_PRINTF(".\r\n");
 
+        wdy_init_msg("Starting CANopen");
         WDY_STATE.init_state = 38;
 
 #ifdef MBED_CONF_APP_MEMTRACE
@@ -253,6 +260,7 @@ int main(void) {
         CO_app_thread.start(CO_app_task);
         DEBUG_PRINTF(". \r\n");
 
+        wdy_init_msg("CANopen ready");
         WDY_STATE.init_state = 67;
 
 #ifdef MBED_CONF_APP_MEMTRACE
@@ -272,6 +280,7 @@ int main(void) {
 
         DEBUG_PRINTF("done.\r\n\r\n");
 
+        wdy_init_msg("CANopen started");
         WDY_STATE.init_state = 75;
 
         while(reset == CO_RESET_NOT) {
@@ -373,6 +382,7 @@ static void CO_app_task(void){
 
             while (err != 0) {
                 DEBUG_PRINTF("Connecting to drive\r\n");
+                wdy_init_msg("Connecting to VFD");
                 WDY_STATE.init_state = 80;
                 CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
 
@@ -383,6 +393,7 @@ static void CO_app_task(void){
                     continue;
                 }
 
+                wdy_init_msg("VFD alive");
                 WDY_STATE.init_state = 85;
 
                 Thread::wait(500);
@@ -393,6 +404,7 @@ static void CO_app_task(void){
                     continue;
                 }
 
+                wdy_init_msg("VFD ready");
                 WDY_STATE.init_state = 90;
                 Thread::wait(500);
 
@@ -401,8 +413,10 @@ static void CO_app_task(void){
 
                 CO->NMT->operatingState = CO_NMT_OPERATIONAL;
 
-                if (err == 0)
+                if (err == 0) {
+                    wdy_init_msg("Done.");
                     WDY_STATE.init_state = 100;
+                }
 
                 Thread::wait(50);
             }
@@ -968,14 +982,16 @@ static void UI_app_task(void) {
             led3 = 1;
             led4 = 1;
 
-            lcd.locate(3, 1);
 
             if (WDY_STATE.init_state < 0) {
+                lcd.locate(3, 1);
                 lcd.printf("                    ");
                 lcd.locate(3, 1);
                 lcd.printf("ERROR %d", WDY_STATE.init_state);
             } else if (WDY_STATE.init_state >= 100) {
                 _init = false;
+
+                lcd.locate(3, 1);
                 printbar(18, 100);
                 Thread::wait(500);
                 lcd.clear();
@@ -993,6 +1009,9 @@ static void UI_app_task(void) {
                 led3 = 0;
                 led4 = 0;
             } else {
+                lcd.locate(2, 1);
+                lcd.printf(" %s                   ", wdy_init_text);
+                lcd.locate(3, 1);
                 printbar(18, WDY_STATE.init_state);
             }
 
