@@ -995,8 +995,8 @@ static void UI_app_task(void) {
     set_action_backlight.save_func_ptr = &save_func_cb;
     set_action_contrast.save_func_ptr = &save_func_cb;
 
-    set_action_contrast.minimum = 0;
-    set_action_contrast.maximum = 50;
+    set_action_contrast.minimum = 1;
+    set_action_contrast.maximum = 60;
     set_action_backlight.step = 5;
     set_action_backlight.minimum = 5;
     set_action_backlight.maximum = 60;
