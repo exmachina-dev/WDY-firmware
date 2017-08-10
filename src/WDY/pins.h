@@ -32,8 +32,8 @@
 
 #define LCD_BACKLIGHT   P0_22
 
-#define FAN_P1          P3_25
-#define FAN_P2          P3_26
+#define FAN_P1          P3_26
+#define FAN_P2          P3_25
 
 #define DRV_ENABLE      P1_26
 #define DRV_ERROR       P1_29
@@ -45,9 +45,9 @@
 #define USBRX           ISP_RXD
 #define USBTX           ISP_TXD
 
-#define ADC_LOADPIN     P0_25
+#define ADC_LOADPIN     P0_23
 #define ADC_TEMP0       P0_24
-#define ADC_TEMP1       P0_23
+#define ADC_TEMP1       P0_25
 
 #define I2C0_SDA        P0_27
 #define I2C0_SCL        P0_28
