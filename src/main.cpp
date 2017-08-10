@@ -570,22 +570,31 @@ static void CO_app_task(void){
 
                 }
 
-                DEBUG_PRINTF("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
-                       status, nd_spd.to_float, nd_pos.to_float, encoder.getSpeed(), enc_position);
-            } else if (status & WDY_STS_HOME_IN_PROGRESS) {      // Homing in progress
-                if (nd_sts.to_int & MFE_STS_HOME_IN_PROGRESS) {
-                    status |= WDY_STS_HOME_IN_PROGRESS;
+
+                    DEBUG_PRINTF("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
+                            status, nd_spd.to_float, nd_pos.to_float, encoder.getSpeed(), enc_position);
+                } else {
+                    nd_spd.to_float = 0.0;
+                    err = MFE_set_speed(&node, &nd_spd);
+                }
+            } else if (CHECK_FLAG(status, WDY_STS_HOME_IN_PROGRESS)) {      // Homing in progress
+                Thread::wait(250 - WDY_LOOP_INTERVAL);
+                DEBUG_PRINTF("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
+                if (CHECK_FLAG(nd_sts.to_int, MFE_STS_HOME_IN_PROGRESS)) {
+                    status = ADD_FLAG(status, WDY_STS_HOME_IN_PROGRESS);
                     homing_time++;
 
                     DEBUG_PRINTF("HOM htime %d inprogress\r\n", homing_time);
-                } else if (nd_sts.to_int & MFE_STS_HOMED) {
+                } else if (homing_time >= 2 && CHECK_FLAG(nd_sts.to_int, MFE_STS_HOMED)) {
+                    DEBUG_PRINTF("DRV STS %d\r\n", nd_sts.to_int);
                     Thread::wait(100);
 
                     encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Once the drive is homed, reset encoder position
 
-                    status |= WDY_STS_HOMED;
-                    status &= !WDY_STS_HOME_IN_PROGRESS;
-                    status &= !WDY_STS_HOME_TIMEOUT;
+                    status = ADD_FLAG(status, WDY_STS_HOMED);
+                    status = REMOVE_FLAG(status, WDY_STS_HOME_IN_PROGRESS);
+                    status = REMOVE_FLAG(status, WDY_STS_HOME_TIMEOUT);
+                    DEBUG_PRINTF("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
 
                     // Set defaults
                     nd_accel.to_float = linear_to_rot(
@@ -611,6 +620,9 @@ static void CO_app_task(void){
                     DEBUG_PRINTF("HOM htime %d timeout\r\n", homing_time);
 
                     status = ADD_FLAG(status, WDY_STS_HOME_TIMEOUT);
+                } else {
+                    DEBUG_PRINTF("HOME IN PROGRESS\r\n");
+                    homing_time++;
                 }
             } else {
                 enc_position = encoder.getPosition();
