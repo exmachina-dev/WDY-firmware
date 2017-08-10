@@ -79,7 +79,7 @@ Serial USBport(USBTX, USBRX);
 
 // LCD screen
 I2C i2c2(I2C2_SDA, I2C2_SCL);
-AC780 lcd(&i2c2, 0x78, P0_22, 0x5c);
+AC780 lcd(&i2c2, 0x78, LCD_BACKLIGHT, 0x5c, true);
 
 // EEPROM
 I2C i2c0(I2C0_SDA, I2C0_SCL);
