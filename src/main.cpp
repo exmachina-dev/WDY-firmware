@@ -353,6 +353,16 @@ static void CO_app_task(void){
     float cmd_decel = 0;
     wdy_command_t cmd_command = WDY_CMD_NONE;
 
+    float cmd_enc_position = 0;
+    float position_p = 0;
+    float position_i = 0;
+    float position_d = 0;
+    float position_error = 0;
+    float position_error_sum = 0;
+    float target_position = 0;
+    float last_position_error = 0;
+    float last_enc_position = 0;
+
     uint16_t status = WDY_STS_NONE;
 
     uint16_t homing_time = 0;
@@ -550,28 +560,53 @@ static void CO_app_task(void){
                 // First, get real position from encoder
                 enc_position = encoder.getPosition();
 
-                // Compute actual speed according to position
-                nd_spd.to_float = linear_to_rot(cmd_speed, length_to_drum_diameter(enc_position));
-                err = MFE_set_speed(&node, &nd_spd);
-                if (err != 0) {
-                    status |= WDY_STS_COMM_FAULT;
-                    continue;
-                }
+                if (!drive_enable.read() || !drive_error.read()) {
 
-                if (new_pos_sig || new_spd_sig) {                       // New position required
+                    /*
+                    if (new_pos_sig || new_spd_sig) {                       // New position required
+
+                        last_position_error = 0;
+                        position_error_sum = 0;
+
+                    }
+                    */
+
+                    cmd_enc_position = cmd_position + 300;
+
+                    position_error = cmd_enc_position - enc_position;
+                    position_error_sum += position_error;
+                    position_p = WDY_POS_P * position_error;
+                    position_i = WDY_POS_I * position_error_sum;
+                    position_d = WDY_POS_D * (position_error - last_position_error);
+                    target_position = cmd_enc_position + position_p + position_i + position_d;
+
+                    DEBUG_PRINTF("PID cmd %f err %f ers %f p %f i %f d %f tar %f\r\n",
+                            cmd_enc_position,
+                            position_error, position_error_sum,
+                            position_p, position_i, position_d,
+                            target_position);
+
+                    last_enc_position = enc_position;
+                    last_position_error = position_error;
+
+                    target_position = length_to_drum_turns(target_position);
+                    if (target_position < 0)
+                        target_position = 0;
+
 #ifdef WDY_GEARBOX_RATIO
-                    nd_pos.to_float = length_to_drum_turns(cmd_position) * WDY_GEARBOX_RATIO; // Position: real to turns
+                    nd_pos.to_float = target_position * WDY_GEARBOX_RATIO; // Position: real to turns
 #else
-                    nd_pos.to_float = length_to_drum_turns(cmd_position); // Position: real to turns
+                    nd_pos.to_float = target_position; // Position: real to turns
 #endif
-                    err = MFE_set_position(&node, &nd_pos);
+                    // Compute actual speed according to position
+                    nd_spd.to_float = linear_to_rot(target_position, length_to_drum_diameter(enc_position));
+                    err = MFE_set_speed(&node, &nd_spd);
 
                     if (err != 0) {
                         status = ADD_FLAG(status, WDY_STS_COMM_FAULT);
                         continue;
                     }
 
-                }
 
 
                     DEBUG_PRINTF("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
@@ -651,7 +686,7 @@ static void CO_app_task(void){
             new_dec_sig = false;
 
             // copy status to WDY_STATE.status
-            WDY_STATE.status = status;
+            //WDY_STATE.status = status;
 
             timerTempDiff = timer1msCopy - timerTempPrevious;
             if (timerTempDiff >= 500) {     // Adjust temperature according to drive temperature
