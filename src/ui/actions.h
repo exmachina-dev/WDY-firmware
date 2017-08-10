@@ -111,12 +111,20 @@ namespace LCD_UI {
             case KEY_NONE:
                 break;
             case KEY_PLUS:
-                var++;
+                if ((var + step) > maximum)
+                    var = maximum;
+                else
+                    var += step;
+
                 if (instant_update && var_ptr != NULL)
                     *var_ptr = var;
                 break;
             case KEY_MINUS:
-                var--;
+                if ((var - step) < minimum)
+                    var = minimum;
+                else
+                    var -= step;
+
                 if (instant_update && var_ptr != NULL)
                     *var_ptr = var;
                 break;
