@@ -45,7 +45,7 @@ UDPSocket* LAN_sock = NULL;
 artnet_packet_t* LAN_packet = NULL;
 artnet_packet_t _packet;
 
-uint8_t mac_addr[6] = {0x00, 0x02, 0xf7, 0xf2, 0xa8, 0x30};
+uint8_t mac_addr[6];
 in_addr ip_addr;
 in_addr nm_addr;
 in_addr gw_addr;
