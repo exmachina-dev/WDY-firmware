@@ -519,6 +519,8 @@ static void CO_app_task(void){
 
                     status = ADD_FLAG(status, WDY_STS_HOME_IN_PROGRESS);
                     status = REMOVE_FLAG(status, WDY_STS_HOMED);
+
+                    Thread::wait(WDY_LOOP_INTERVAL * 5);    // Wait to let the VFD update its status
                 } else if (cmd_command == WDY_CMD_HOME_ENCODER) {
                     encoder.setHome(WDY_ENCODER_HOME_OFFSET);   // Reset encoder position
                 } else {  // WDY_CMD_NONE
