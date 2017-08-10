@@ -100,6 +100,8 @@ int main(void) {
     wdog.kick(10); // First watchdog kick to trigger it
 
     // Fans default speed
+    fan_top.period_us(40); // 1 / 40 = 0.025 * 1000000 = 25kHz
+    fan_bot.period_us(40);
     fan_top = 1.0;
     fan_bot = 1.0;
 
@@ -640,9 +642,10 @@ static void CO_app_task(void){
                     bdata_t _temp;
                     memcpy(&_temp.bytes, &nd_temp.bytes, BDATA_SIZE);
 
-                    fan_top = 0.35 + (float)((_temp.to_float / 50.0) * 0.65);
-                    fan_bot = 0.35 + (float)((_temp.to_float / 50.0) * 0.65);
+                    fan_top = 0.36 + (float)((_temp.to_float / 50.0) * 0.64);
+                    fan_bot = 0.50 + (float)((_temp.to_float / 50.0) * 0.50);
                     DEBUG_PRINTF("TEMP tmp %f f1 %f f2 %f\r\n", _temp.to_float, (float) fan_top, (float) fan_bot);
+                    DEBUG_PRINTF("TEMP tmp0 %f tmp1 %f\r\n", adc_temp0.read(), adc_temp1.read());
                 } else {
                     fan_top = 1.0;
                     fan_bot = 1.0;
