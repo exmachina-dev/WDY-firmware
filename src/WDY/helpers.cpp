@@ -66,7 +66,7 @@ float length_to_drum_turns(float length) {
 
     Nturns = (_S_THK - _D_DIA + sqrt(
                 pow(_D_DIA - _S_THK, 2) + ((4 * _S_THK * (
-                            (WDY_MAX_POSITION - length))) / _PI))) /
+                            (length))) / _PI))) /
         (2 * _S_THK);
 
     return Nturns;
@@ -75,7 +75,7 @@ float length_to_drum_turns(float length) {
 float length_to_drum_diameter(float length) {
     float Ddiameter;
 
-    Ddiameter = 2 * length_to_drum_turns(length) * _S_THK + _D_DIA;
+    Ddiameter = 2 * length_to_drum_turns(WDY_MAX_POSITION - length) * _S_THK + _D_DIA;
 
     return Ddiameter;
 }
