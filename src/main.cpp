@@ -546,8 +546,7 @@ static void CO_app_task(void){
 
 
             // Control loop of speed and position regarding external encoder
-            if (cmd_command == WDY_CMD_ENABLE && (status & WDY_STS_HOMED)) {     // Normal loop
-
+            if (cmd_command == WDY_CMD_ENABLE && CHECK_FLAG(status, WDY_STS_HOMED)) {     // Normal loop
                 // First, get real position from encoder
                 enc_position = encoder.getPosition();
 
