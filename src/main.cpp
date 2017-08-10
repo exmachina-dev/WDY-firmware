@@ -748,6 +748,7 @@ static void LAN_app_task(void) {
 
             LAN_eth->set_dhcp(WDY_STATE.config.network.dhcp);
             if (!WDY_STATE.config.network.dhcp) {
+                if (!WDY_STATE.config.network.static_addr) { // Auto generated network configuration
                     WDY_STATE.config.network.ip_addr.s_addr = (mac_addr[5] << 24) + (mac_addr[4] << 16) + ((mac_addr[3] + OEM_LO) << 8) + 0x02;
                     WDY_STATE.config.network.nm_addr.s_addr = 0x000000FF;
                     WDY_STATE.config.network.gw_addr.s_addr = 0x00000000;
