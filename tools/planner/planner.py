@@ -230,19 +230,19 @@ if __name__ == '__main__':
     p = Planner()
 
     p.plan_move(1000, 100)
-    for i in range(int(p.move.total_move_time * p._frequency) + 1):
+    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
         p.iter()
 
     p.plan_move(1500, 50)
-    for i in range(int(p.move.total_move_time * p._frequency) + 1):
+    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
         p.iter()
 
     p.plan_move(500, 100)
-    for i in range(int(p.move.total_move_time * p._frequency) + 1):
+    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
         p.iter()
 
     p.plan_move(0, 1000)
-    for i in range(int(p.move.total_move_time * p._frequency)):
+    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
         p.iter()
 
     p.plan_move(500, 100)
@@ -250,7 +250,7 @@ if __name__ == '__main__':
         p.iter()
 
     p.plan_move(0, 100)
-    for i in range(int(p.move.total_move_time * p._frequency)):
+    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
         p.iter()
 
     p.plan_move(500, 50)
@@ -258,7 +258,7 @@ if __name__ == '__main__':
         p.iter()
 
     p.plan_move(0, 200)
-    for i in range(int(p.move.total_move_time * p._frequency)):
+    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
         p.iter()
 
     p.plan_move(500, 100)
@@ -266,5 +266,5 @@ if __name__ == '__main__':
         p.iter()
 
     p.plan_move(0, 200)
-    for i in range(int(p.move.total_move_time * p._frequency)):
+    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
         p.iter()
