@@ -40,6 +40,9 @@ class Move(object):
         self.plan()
 
     def plan(self):
+        if self.current_speed < 0 or self.speed < 0:
+            raise ValueError("Must not be negative.")
+
         initial_speed = self.current_speed
         initial_velocity = self.current_speed * self.direction
         # float final_rate = this->nominal_rate * (exitspeed / this->nominal_speed) # Always 0
