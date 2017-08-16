@@ -160,6 +160,11 @@ class Planner(object):
     def iter(self):
         self._current_distance = self.position - self._current_position
 
+        if self._current_distance == 0:
+            self.out.write(self.state + '\r\n')
+            self._current_iteration += 1
+            return
+
         self.phase = ''
         if self.move.total_move_intervals < self._current_iteration:
             self._current_velocity = 0
