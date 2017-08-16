@@ -12,7 +12,7 @@ Plan a trapezoidal move and output the move profile.
 
 import time
 
-from math import sqrt
+from math import sqrt, floor
 
 
 class Move(object):
@@ -23,6 +23,7 @@ class Move(object):
     KEYS = ('position', 'current_position', 'speed', 'current_speed', 'acceleration', 'deceleration')
     FORWARD = 1
     BACKWARD = -1
+    FREQUENCY = 100     #Hz
 
     def __init__(self, **kwargs):
         try:
@@ -80,9 +81,18 @@ class Move(object):
         # Figure out how long the move takes total ( in seconds )
         self.total_move_time = time_to_accelerate + time_to_decelerate + self.plateau_time
 
-        # Now figure out the two acceleration ramp change events in ticks
-        self.accelerate_until = time_to_accelerate
-        self.decelerate_after = self.total_move_time - time_to_decelerate
+        # Round the times into intervals
+        acceleration_intervals = floor(time_to_accelerate * self.FREQUENCY)
+        deceleration_intervals = floor(time_to_decelerate * self.FREQUENCY)
+        self.total_move_intervals = floor(self.total_move_time * self.FREQUENCY)
+
+        acceleration_time = acceleration_intervals / self.FREQUENCY
+        deceleration_time = deceleration_intervals / self.FREQUENCY
+        self.total_move_time = self.total_move_intervals / self.FREQUENCY
+
+        # Now figure out the two acceleration ramp change events in intervals
+        self.accelerate_until = acceleration_intervals
+        self.decelerate_after = self.total_move_intervals - deceleration_intervals
 
     @property
     def distance(self):
@@ -121,8 +131,10 @@ class Planner(object):
         self._current_distance = 0.0
         self._current_iteration = 0
 
-        self._frequency = 10     # Hz
+        self._frequency = 100     # Hz
         self._interval = 1 / self._frequency
+
+        Move.FREQUENCY = self._frequency
 
         self.move = None
 
@@ -145,23 +157,23 @@ class Planner(object):
     def iter(self):
         self._current_distance = self.position - self._current_position
 
-        phase = ''
-        if (self.move.accelerate_until * self._frequency) > self._current_iteration:
+        self.phase = ''
+        if self.move.total_move_intervals < self._current_iteration:
+            self._current_velocity = 0
+            self.phase = ' STOP'
+        elif self.move.accelerate_until > self._current_iteration:
             self._current_velocity += self.move.acceleration * self._interval * self.move.direction
-            phase = 'ACCEL'
-        elif (self.move.total_move_time * self._frequency) <= self._current_iteration:
-            self._current_speed = 0
-            phase = ' STOP'
-        elif (self.move.decelerate_after * self._frequency) <= self._current_iteration:
+            self.phase = 'ACCEL'
+        elif self.move.decelerate_after < self._current_iteration:
             self._current_velocity -= self.move.deceleration * self._interval * self.move.direction
-            phase = 'DECEL'
+            self.phase = 'DECEL'
         else:
-            phase = 'PLATE'
+            self.phase = 'PLATE'
 
         self._current_position += self._current_velocity * self._interval
 
-        print('{:3d} {}: {:10.2f} {:10.2f} {:10.2f}' .format(self._current_iteration, phase, self._current_position, self._current_speed, _distance))
-        self.out.write('{:3d} {} {:10.2f} {:10.2f} {:10.2f}\r\n' .format(self._current_iteration, phase, self._current_position, self._current_speed, _distance))
+        print('{:3d} {}: {:10.2f} {:10.2f} {:10.2f}' .format(self._current_iteration, self.phase, self._current_position, self._current_speed, _distance))
+        self.out.write('{:3d} {} {:10.2f} {:10.2f} {:10.2f}\r\n' .format(self._current_iteration, self.phase, self._current_position, self._current_speed, _distance))
 
         self._current_iteration += 1
 
