@@ -20,7 +20,7 @@ class Move(object):
     Store and compute a move.
     """
 
-    KEYS = ('distance', 'speed', 'current_speed', 'acceleration', 'deceleration')
+    KEYS = ('position', 'current_position', 'speed', 'current_speed', 'acceleration', 'deceleration')
     FORWARD = 1
     BACKWARD = -1
 
@@ -85,6 +85,10 @@ class Move(object):
         self.decelerate_after = self.total_move_time - time_to_decelerate
 
     @property
+    def distance(self):
+        return abs(self.current_position - self.position)
+
+    @property
     def direction(self):
         if self.current_position < self.position:
             return self.FORWARD
@@ -114,6 +118,7 @@ class Planner(object):
         self._current_speed = 0.0
         self._current_velocity = 0.0
         self._current_position = 0.0
+        self._current_distance = 0.0
         self._current_iteration = 0
 
         self._frequency = 10     # Hz
@@ -126,7 +131,9 @@ class Planner(object):
     def plan_move(self, position, speed):
         self.position = position
         self.speed = speed
-        self.move = Move(distance=abs(self._current_position - position),
+        self.move = Move(
+                position=position,
+                current_position=self._current_position,
                 speed=speed,
                 current_speed=abs(self._current_velocity),
                 acceleration=self.acceleration, deceleration=self.deceleration)
@@ -136,7 +143,7 @@ class Planner(object):
         print(vars(self.move))
 
     def iter(self):
-        _distance = self.position - self._current_position
+        self._current_distance = self.position - self._current_position
 
         phase = ''
         if (self.move.accelerate_until * self._frequency) > self._current_iteration:
