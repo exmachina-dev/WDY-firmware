@@ -140,7 +140,7 @@ class Planner(object):
             self._current_position += self._current_speed * self._interval
 
         print('{:3d} {}: {:10.2f} {:10.2f} {:10.2f}' .format(self._current_iteration, phase, self._current_position, self._current_speed, _distance))
-        self.out.write('{:3d} {} {:10.2f} {:10.2f} {:10.2f}\n' .format(self._current_iteration, phase, self._current_position, self._current_speed, _distance))
+        self.out.write('{:3d} {} {:10.2f} {:10.2f} {:10.2f}\r\n' .format(self._current_iteration, phase, self._current_position, self._current_speed, _distance))
 
         self._current_iteration += 1
 
