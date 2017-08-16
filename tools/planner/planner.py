@@ -114,6 +114,13 @@ class Move(object):
     def velocity(self):
         return self.speed * self.direction
 
+    def __repr__(self):
+        return 'Move: pos={0.position:.0f} cpos={0.current_position:.0f} d={0.distance:.0f}\
+ spd={0.speed:.0f} cspd={0.current_speed:.0f} d={0.distance:.0f}\
+ acc={0.acceleration:.0f} dec={0.deceleration:.0f}\
+ dir={0.direction} tt={0.total_move_time:.0f}s at={0.accelerate_until:.0f}s pt={0.plateau_time:.0f}s dt={0.decelerate_after:.0f}s'.format(self)
+
+
 
 class Planner(object):
     max_speed = 1800            # mm/s
@@ -155,7 +162,7 @@ class Planner(object):
 
         self._current_iteration = 0
 
-        print(vars(self.move))
+        print(repr(self.move))
 
     def iter(self):
         self._current_distance = self.position - self._current_position
@@ -180,8 +187,8 @@ class Planner(object):
 
         self._current_position += self._current_velocity * self._interval
 
-        print('{:3d} {}: {:10.2f} {:10.2f} {:10.2f}' .format(self._current_iteration, self.phase, self._current_position, self._current_speed, _distance))
-        self.out.write('{:3d} {} {:10.2f} {:10.2f} {:10.2f}\r\n' .format(self._current_iteration, self.phase, self._current_position, self._current_speed, _distance))
+        #print('{:3d} {}: {:10.2f} {:10.2f} {:10.2f}' .format(self._current_iteration, phase, self._current_position, self._current_velocity, _distance))
+        self.out.write(self.state + '\r\n')
 
         self._current_iteration += 1
 
@@ -214,6 +221,10 @@ class Planner(object):
             return
 
         self._deceleration = float(decel)
+
+    @property
+    def state(self):
+        return '{0._current_iteration:3d} {0.phase} {0._current_position:10.2f} {0._current_velocity:10.2f} {0._current_distance:10.2f}' .format(self)
 
 if __name__ == '__main__':
     p = Planner()
