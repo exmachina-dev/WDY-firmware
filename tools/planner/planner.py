@@ -21,6 +21,8 @@ class Move(object):
     """
 
     KEYS = ('distance', 'speed', 'current_speed', 'acceleration', 'deceleration')
+    FORWARD = 1
+    BACKWARD = -1
 
     def __init__(self, **kwargs):
         try:
@@ -38,6 +40,7 @@ class Move(object):
 
     def plan(self):
         initial_speed = self.current_speed
+        initial_velocity = self.current_speed * self.direction
         # float final_rate = this->nominal_rate * (exitspeed / this->nominal_speed) # Always 0
 
         # How many steps ( can be fractions of steps, we need very precise values ) to accelerate and decelerate
@@ -53,7 +56,7 @@ class Move(object):
         maximum_speed = min(maximum_possible_speed, self.speed)
 
         # Now figure out how long it takes to accelerate in seconds
-        time_to_accelerate = (maximum_speed - initial_speed) / self.acceleration
+        time_to_accelerate = abs(maximum_speed - initial_velocity) / self.acceleration
 
         # Now figure out how long it takes to decelerate
         time_to_decelerate = (0 - maximum_speed) / -self.deceleration
@@ -65,7 +68,7 @@ class Move(object):
         # Only if there is actually a plateau ( we are limited by nominal_rate )
         if(maximum_possible_speed > self.speed):
             # Figure out the acceleration and deceleration distances ( in mm )
-            acceleration_distance = ((initial_speed + maximum_speed) / 2.0) * time_to_accelerate
+            acceleration_distance = ((initial_velocity + maximum_speed) / 2.0) * time_to_accelerate
             deceleration_distance = ((maximum_speed + 0) / 2.0) * time_to_decelerate
 
             # Figure out the plateau steps
@@ -80,6 +83,19 @@ class Move(object):
         # Now figure out the two acceleration ramp change events in ticks
         self.accelerate_until = time_to_accelerate
         self.decelerate_after = self.total_move_time - time_to_decelerate
+
+    @property
+    def direction(self):
+        if self.current_position < self.position:
+            return self.FORWARD
+        elif self.current_position > self.position:
+            return self.BACKWARD
+        else:
+            return
+
+    @property
+    def velocity(self):
+        return self.speed * self.direction
 
 
 class Planner(object):
@@ -96,6 +112,7 @@ class Planner(object):
         self._deceleration = 50.0
 
         self._current_speed = 0.0
+        self._current_velocity = 0.0
         self._current_position = 0.0
         self._current_iteration = 0
 
@@ -111,7 +128,7 @@ class Planner(object):
         self.speed = speed
         self.move = Move(distance=abs(self._current_position - position),
                 speed=speed,
-                current_speed=self._current_speed,
+                current_speed=abs(self._current_velocity),
                 acceleration=self.acceleration, deceleration=self.deceleration)
 
         self._current_iteration = 0
@@ -123,21 +140,18 @@ class Planner(object):
 
         phase = ''
         if (self.move.accelerate_until * self._frequency) > self._current_iteration:
-            self._current_speed += self.move.acceleration * self._interval
+            self._current_velocity += self.move.acceleration * self._interval * self.move.direction
             phase = 'ACCEL'
         elif (self.move.total_move_time * self._frequency) <= self._current_iteration:
             self._current_speed = 0
             phase = ' STOP'
         elif (self.move.decelerate_after * self._frequency) <= self._current_iteration:
-            self._current_speed -= self.move.deceleration * self._interval
+            self._current_velocity -= self.move.deceleration * self._interval * self.move.direction
             phase = 'DECEL'
         else:
             phase = 'PLATE'
 
-        if _distance < 0:
-            self._current_position -= self._current_speed * self._interval
-        else:
-            self._current_position += self._current_speed * self._interval
+        self._current_position += self._current_velocity * self._interval
 
         print('{:3d} {}: {:10.2f} {:10.2f} {:10.2f}' .format(self._current_iteration, phase, self._current_position, self._current_speed, _distance))
         self.out.write('{:3d} {} {:10.2f} {:10.2f} {:10.2f}\r\n' .format(self._current_iteration, phase, self._current_position, self._current_speed, _distance))
