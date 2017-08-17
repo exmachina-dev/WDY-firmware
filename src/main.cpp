@@ -366,6 +366,8 @@ static void CO_app_task(void){
     bool new_acc_sig = false;
     bool new_dec_sig = false;
 
+    WDY_motion::Planner planner();
+
     while (true) {
         Thread::wait(WDY_LOOP_INTERVAL); // wait before to ensure this delay is always repected
 
