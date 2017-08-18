@@ -58,10 +58,11 @@ namespace LCD_UI {
                     if (last_key != current_key) {
                         if (active_menu == root_menu)
                             _display_menu_flag = !_display_menu_flag;
-                        else
+                        else {
                             active_menu = active_menu->parent();
                             menu_size = active_menu->items.size();
                             cursor_pos = 0;
+                        }
                     }
                     break;
                 case KEY_UP:
