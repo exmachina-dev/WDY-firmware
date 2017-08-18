@@ -26,16 +26,6 @@
 #include "WDY/lcd.h"
 #include "WDY/eeprom.h"
 
-/* Artnet includes */
-
-#define HAVE_CONFIG_H // Tell libartnet we have a custom config file
-
-#include "LAN.h"
-#include "LAN_common.h"
-#include "LAN_packets.h"
-
-#define DMX_FOOTPRINT   7
-
 /* CANopen includes */
 
 #define CO_HAVE_CONFIG // Tell CANopenNode we have a custom config file
@@ -70,20 +60,6 @@ QEI encoder(QEI_INVERT);
 // Serial debug port
 Serial USBport(USBTX, USBRX);
 
-struct dmx_device_parameter_s {
-    uint8_t command;
-    uint16_t position;
-    uint16_t speed;
-    uint8_t accel;
-    uint8_t decel;
-} __attribute__((packed));
-
-typedef struct dmx_device_parameter_s dmx_device_parameter_t;
-
-typedef union {
-    uint8_t data[DMX_FOOTPRINT];
-    dmx_device_parameter_t parameter;
-} dmx_device_union_t;
 
 int main(void);
 
@@ -95,9 +71,8 @@ static void CO_leds_task(void);
 
 void CO_CANInterruptHandler(void);
 
-static void LAN_app_task(void);
-static void _dmx_cb(uint16_t port, uint8_t *data);
 /* Tasks */
+#include "tasks/artnet.h"
 #include "tasks/lcd_ui.h"
 
 #endif /* !MAIN_H_ */
