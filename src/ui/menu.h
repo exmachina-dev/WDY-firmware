@@ -5,8 +5,8 @@
  * Distributed under terms of the MIT license.
  */
 
-#ifndef MENU_H
-#define MENU_H
+#ifndef UI_MENU_H
+#define UI_MENU_H
 
 #include "mbed.h"
 #include <vector>
@@ -44,4 +44,4 @@ namespace LCD_UI {
     };
 }
 
-#endif /* !MENU_H */
+#endif /* !UI_MENU_H */

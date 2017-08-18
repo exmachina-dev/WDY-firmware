@@ -5,19 +5,11 @@
  * Distributed under terms of the MIT license.
  */
 
-#ifndef INPUTS_H
-#define INPUTS_H
+#ifndef WDY_INPUTS_H
+#define WDY_INPUTS_H
 
 #include "mbed.h"
 #include "pins.h"
-
-// UI Inputs
-InterruptIn button1(BUTTON1);
-InterruptIn button2(BUTTON2);
-InterruptIn button3(BUTTON3);
-InterruptIn button4(BUTTON4);
-InterruptIn button5(BUTTON5);
-InterruptIn button6(BUTTON6);
 
 // System inputs
 DigitalIn drive_enable(DRV_ENABLE);
@@ -25,4 +17,4 @@ DigitalIn drive_error(DRV_ERROR);
 DigitalIn brake_sensor1(BRK_SENSOR1);
 DigitalIn brake_sensor2(BRK_SENSOR2);
 
-#endif /* !INPUTS_H */
+#endif /* !WDY_INPUTS_H */

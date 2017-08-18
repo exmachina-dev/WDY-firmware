@@ -5,13 +5,12 @@
  * Distributed under terms of the MIT license.
  */
 
-#ifndef PINS_H
-#define PINS_H
+#ifndef WDY_PINS_H
+#define WDY_PINS_H
 
 #include "config.h"
 
 #include "PinNames.h"
-#include "mbed.h"
 
 #define LED1            P0_9
 #define LED2            P1_18
@@ -66,4 +65,4 @@
 #define CAN1_RXD        P0_0
 #define CAN1_TXD        P0_1
 
-#endif /* !PINS_H */
+#endif /* !WDY_PINS_H */

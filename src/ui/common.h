@@ -5,8 +5,8 @@
  * Distributed under terms of the MIT license.
  */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef UI_COMMON_H
+#define UI_COMMON_H
 
 #include <sys/types.h>
 #include <stdint.h>
@@ -34,4 +34,4 @@ namespace LCD_UI {
     int8_t netmask_to_cidr(in_addr netmask);
 }
 
-#endif /* !COMMON_H */
+#endif /* !UI_COMMON_H */

@@ -71,10 +71,8 @@ bool new_dmx_sig = false;
 Thread UI_app_thread(osPriorityBelowNormal, 1024);
 Ticker ticker_leds;
 
-volatile bool WDY_UI_MENU_FLAG;
-volatile bool WDY_UI_DOWN_FLAG;
-volatile bool WDY_UI_UP_FLAG;
-volatile bool WDY_UI_ENTER_FLAG;
+/* WDY */
+wdy_state_t WDY_STATE;
 
 
 int main(void) {
@@ -311,9 +309,7 @@ int main(void) {
 
     // Flash all leds
     can_led = 1;
-    //err_led = 1;
-    led4 = 1;
-    //led2 = 1;
+    err_led = 1;
 
     // Terminate threads
     // CO_tmr_thread.terminate();
@@ -671,7 +667,6 @@ static void CO_app_task(void){
                 }
 
                 timerTempPrevious = timer1msCopy;
-                led1 = !led1;
             }
         } else {
             DEBUG_PRINTF("Waiting for CAN.\r\n");
@@ -873,223 +868,5 @@ void _dmx_cb(uint16_t port, uint8_t *dmx_data) {
     if (memcmp(&_lastDMXdevice.data, &DMXdevice.data, DMX_FOOTPRINT)) {
         memcpy(&_lastDMXdevice.data, &DMXdevice.data, DMX_FOOTPRINT);
         new_dmx_sig = true;
-    }
-}
-
-void printbar(int length, int perc) {
-    for (int i=0; i<length; i++) {
-        if (perc > (i * 100 / length)) {
-            if (!i)
-                lcd.putc(1);
-            else if (i == length-1)
-                lcd.putc(5);
-            else
-                lcd.putc(3);
-        } else {
-            if (!i)
-                lcd.putc(0);
-            else if (i == length-1)
-                lcd.putc(4);
-            else
-                lcd.putc(2);
-        }
-    }
-}
-
-void menu_interrupt(void) {
-    WDY_UI_MENU_FLAG = true;
-}
-
-void down_interrupt(void) {
-    WDY_UI_DOWN_FLAG = true;
-}
-
-void up_interrupt(void) {
-    WDY_UI_UP_FLAG = true;
-}
-
-void enter_interrupt(void) {
-    WDY_UI_ENTER_FLAG = true;
-}
-
-void save_func_cb(void) {
-    WDY_eeprom_write_config(&eeprom, &WDY_STATE.config);
-}
-
-static void UI_app_task(void) {
-    bool _init = true;
-    uint16_t period_counter = 0;
-    uint8_t lcd_contrast = 0;
-
-    // Status led setup
-    led1.period(0.02);
-    led2.period(0.02);
-    led3.period(0.02);
-    led4.period(0.02);
-
-    button2.mode(PullUp);
-    button3.mode(PullUp);
-    button4.mode(PullUp);
-    button5.mode(PullUp);
-
-    button2.fall(&enter_interrupt);
-    button3.fall(&down_interrupt);
-    button4.fall(&up_interrupt);
-    button5.fall(&menu_interrupt);
-
-    // I2C bus speed: 400 kHz
-    i2c2.frequency(400 * 1000);
-
-    lcd.setBacklight(true);
-    lcd.setContrast(WDY_STATE.config.screen.contrast);
-
-    lcd.setUDC(0, UDC_bar_left_empty);
-    lcd.setUDC(1, UDC_bar_left_full);
-    lcd.setUDC(2, UDC_bar_middle_empty);
-    lcd.setUDC(3, UDC_bar_middle_full);
-    lcd.setUDC(4, UDC_bar_right_empty);
-    lcd.setUDC(5, UDC_bar_right_full);
-
-    lcd.locate(0, 3);
-    lcd.printf("Winch  Dynamic");
-    lcd.locate(1, 5);
-    lcd.printf("by ExMachina");
-
-    using namespace LCD_UI;
-
-    Menu _root_menu("Main menu");
-
-    Menu _config_menu("Config");
-
-    Menu _network_menu("Network");
-    _network_menu.addItem(&set_action_dhcp, NULL, "DHCP");
-    _network_menu.addItem(NULL, NULL, "IP address");
-    _network_menu.addItem(NULL, NULL, "Netmask");
-    _network_menu.addItem(NULL, NULL, "Gateway");
-    _network_menu.addItem(NULL, &_config_menu, "--Back--");
-    _config_menu.addItem(NULL, &_network_menu, "Network");
-
-    Menu _artnet_menu("ArtNET");
-    _artnet_menu.addItem(&set_action_net, NULL, "Net");
-    _artnet_menu.addItem(&set_action_subnet, NULL, "Subnet");
-    _artnet_menu.addItem(&set_action_universe, NULL, "Universe");
-    _artnet_menu.addItem(&set_action_dmx_addr, NULL, "DMX address");
-    _artnet_menu.addItem(NULL, &_config_menu, "--Back--");
-    _config_menu.addItem(NULL, &_artnet_menu, "ArtNET");
-
-    Menu _screen_menu("Screen");
-    _screen_menu.addItem(&set_action_contrast, NULL, "Contrast");
-    _screen_menu.addItem(&set_action_backlight, NULL, "Backlight");
-    _screen_menu.addItem(NULL, &_config_menu, "--Back--");
-    _config_menu.addItem(NULL, &_screen_menu, "Screen");
-
-    _config_menu.addItem(NULL, &_root_menu, "--Back--");
-
-    _root_menu.addItem(&info_action, NULL, "Infos");
-    _root_menu.addItem(NULL, &_config_menu, "Config");
-    _root_menu.addItem(&about_action, NULL, "About");
-
-    UI ui(&lcd, &_root_menu);
-
-    ui.setDefaultAction(&info_action);
-
-    set_action_backlight.save_func_ptr = &save_func_cb;
-    set_action_contrast.save_func_ptr = &save_func_cb;
-
-    set_action_contrast.minimum = 1;
-    set_action_contrast.maximum = 60;
-    set_action_backlight.step = 5;
-    set_action_backlight.minimum = 5;
-    set_action_backlight.maximum = 60;
-
-    while (true) {
-        while (_init) {
-            led1 = 1;
-            led2 = 1;
-            led3 = 1;
-            led4 = 1;
-
-
-            if (WDY_STATE.init_state < 0) {
-                lcd.locate(3, 1);
-                lcd.printf("                    ");
-                lcd.locate(3, 1);
-                lcd.printf("ERROR %d", WDY_STATE.init_state);
-            } else if (WDY_STATE.init_state >= 100) {
-                _init = false;
-
-                lcd.locate(3, 1);
-                printbar(18, 100);
-                Thread::wait(500);
-                lcd.clear();
-
-                lcd.setUDC(0, UDC_arrow_left);
-                lcd.setUDC(1, UDC_arrow_right);
-                lcd.setUDC(2, UDC_arrow_up);
-                lcd.setUDC(3, UDC_arrow_down);
-                lcd.setUDC(4, UDC_icon_menu);
-                lcd.setUDC(5, UDC_icon_ok);
-                lcd.setUDC(6, UDC_icon_cancel);
-
-                led1 = 0;
-                led2 = 0;
-                led3 = 0;
-                led4 = 0;
-            } else {
-                lcd.locate(2, 1);
-                lcd.printf(" %s                   ", wdy_init_text);
-                lcd.locate(3, 1);
-                printbar(18, WDY_STATE.init_state);
-            }
-
-            Thread::wait(50);
-        }
-
-        if (WDY_UI_MENU_FLAG || WDY_UI_UP_FLAG || WDY_UI_DOWN_FLAG || WDY_UI_MENU_FLAG)
-            period_counter = 0;
-
-        // Update keys base on flags
-        if (WDY_UI_MENU_FLAG) {
-            ui.setKey(KEY_MENU);
-            WDY_UI_MENU_FLAG = false;
-        } else if (WDY_UI_UP_FLAG) {
-            ui.setKey(KEY_UP);
-            WDY_UI_UP_FLAG = false;
-        } else if (WDY_UI_DOWN_FLAG) {
-            ui.setKey(KEY_DOWN);
-            WDY_UI_DOWN_FLAG = false;
-        } else if (WDY_UI_ENTER_FLAG) {
-            ui.setKey(KEY_ENTER);
-            WDY_UI_ENTER_FLAG = false;
-        } else {
-            ui.setKey(KEY_NONE);
-        }
-
-        ui.update();
-
-        if (lcd_contrast != WDY_STATE.config.screen.contrast) {
-            lcd_contrast = WDY_STATE.config.screen.contrast;
-            lcd.setContrast(lcd_contrast);
-        }
-
-        // Turn off backlight after backlight period
-        if (period_counter > WDY_STATE.config.screen.backlight * (1000 / 50))
-            lcd.setBacklight(false);
-        else
-            lcd.setBacklight(true);
-
-        // Update leds
-        if (WDY_STATE.status != 0) {
-            ui.blink_code(&led4, WDY_STATE.status);
-        } else {
-            led4 = 0;
-        }
-
-        led2 = ((float) (period_counter % 16)) / 16;
-        led3 = ((float) (period_counter % 8)) / 16;
-
-        period_counter++;
-
-        Thread::wait(50);
     }
 }
