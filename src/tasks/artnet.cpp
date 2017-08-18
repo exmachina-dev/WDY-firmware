@@ -40,6 +40,20 @@ extern artnet_packet_t* LAN_packet;
 
 static void _dmx_cb(uint16_t port, uint8_t *data);
 
+static uint32_t _get_serial_number();
+
+extern "C" void mbed_mac_address(char *s) {
+    char mac[6];
+    uint32_t sn = _get_serial_number();
+    mac[0] = 0x00;
+    mac[1] = LAN_ESTA_CODE_HI;
+    mac[2] = LAN_ESTA_CODE_LO;
+    mac[3] = (char) ((sn & 0xff0000) >> 16);
+    mac[4] = (char) ((sn & 0xff00) >> 8);
+    mac[5] = (char) ((sn & 0xff) >> 0);
+    memcpy(s, mac, 6);
+}
+
 
 void LAN_app_task(void) {
     int rtn;
@@ -205,4 +219,23 @@ void _dmx_cb(uint16_t port, uint8_t *dmx_data) {
         memcpy(&_lastDMXdevice.data, &DMXdevice.data, WDY_DMX_FOOTPRINT);
         new_dmx_sig = true;
     }
+}
+
+#define IAP_LOCATION 0x1FFF1FF1
+
+typedef void (*IAP)(unsigned long [], unsigned long[] );
+IAP iap_entry = (IAP) IAP_LOCATION;
+
+static uint32_t _get_serial_number() {
+    unsigned long command[5] = {0,0,0,0,0};
+    unsigned long result[5] = {0,0,0,0,0};
+
+    // See User Manual section 32.8.7
+    command[0] = 58;  // read device serial number
+    iap_entry(command, result);
+    if (result[0] == 0) {
+        return result[1] ^ result[2] ^ result[3] ^ result[4];
+    }
+
+    return 0;
 }

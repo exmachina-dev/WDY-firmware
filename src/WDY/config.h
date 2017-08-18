@@ -18,8 +18,8 @@
 #define LAN_OEM_CODE_LO   0x32    // Winch Dynamic by ExMachina
 #define LAN_OEM_CODE_HI   0x28    // Winch Dynamic by ExMachina
 
-#define LAN_ESTA_CODE_LO  0x00
-#define LAN_ESTA_CODE_HI  0x00
+#define LAN_ESTA_CODE_LO  0x78
+#define LAN_ESTA_CODE_HI  0x45
 
 #define WDY_DMX_FOOTPRINT   7
 
