@@ -361,12 +361,9 @@ static void CO_app_task(void){
     bdata_t nd_mot_pos;
 
     bool new_cmd_sig = false;
-    bool new_spd_sig = false;
-    bool new_pos_sig = false;
-    bool new_acc_sig = false;
-    bool new_dec_sig = false;
+    bool new_mov_sig = false;
 
-    WDY_motion::Planner planner();
+    WDY_motion::Planner planner;
 
     while (true) {
         Thread::wait(WDY_LOOP_INTERVAL); // wait before to ensure this delay is always repected
@@ -437,10 +434,9 @@ static void CO_app_task(void){
                 new_dmx_sig = false;                    // Reset signal
 
                 new_cmd_sig = (last_command != cmd_command);
-                new_pos_sig = (last_position != cmd_position);
-                new_spd_sig = (last_speed != cmd_speed);
-                new_acc_sig = (last_accel != cmd_accel);
-                new_dec_sig = (last_decel != cmd_decel);
+                new_mov_sig =
+                    (last_position != cmd_position) | (last_speed != cmd_speed) |
+                    (last_accel != cmd_accel) | (last_decel != cmd_decel);
             }
 
 
@@ -489,9 +485,14 @@ static void CO_app_task(void){
             }
 
 
-            if (new_cmd_sig) {
+            if (new_mov_sig) {
+                planner.set_accel(cmd_accel);
+                planner.set_decel(cmd_decel);
+                planner.plan(cmd_position, cmd_speed);
                 DEBUG_PRINTF("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
+            }
 
+            if (new_cmd_sig) {
                 if (cmd_command == WDY_CMD_ENABLE) {
                     nd_cmd.to_int = MFE_CMD_ENABLE;
                     err = MFE_set_command(&node, &nd_cmd);
@@ -514,16 +515,6 @@ static void CO_app_task(void){
                     status = ADD_FLAG(status, WDY_STS_COMM_FAULT);
                     continue;
                 }
-            }
-
-            if (new_acc_sig) {
-                nd_accel.to_float = linear_to_rot(cmd_accel, length_to_drum_diameter(WDY_MAX_POSITION));
-                err = MFE_set_accel(&node, &nd_accel);
-            }
-
-            if (new_dec_sig) {
-                nd_decel.to_float = linear_to_rot(cmd_decel, length_to_drum_diameter(WDY_MAX_POSITION));
-                err += MFE_set_decel(&node, &nd_decel);
             }
 
 
@@ -613,10 +604,7 @@ static void CO_app_task(void){
 
             // reset signals
             new_cmd_sig = false;
-            new_pos_sig = false;
-            new_spd_sig = false;
-            new_acc_sig = false;
-            new_dec_sig = false;
+            new_mov_sig = false;
 
             // copy status to WDY_STATE.status
             WDY_STATE.status = status;
