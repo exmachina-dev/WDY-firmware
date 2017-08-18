@@ -547,10 +547,6 @@ static void CO_app_task(void){
 
                     DEBUG_PRINTF("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
                             status, nd_spd.to_float, nd_pos.to_float, encoder.getSpeed(), enc_position);
-                } else {
-                    nd_spd.to_float = 0.0;
-                    err = MFE_set_speed(&node, &nd_spd);
-                }
             } else if (CHECK_FLAG(status, WDY_STS_HOME_IN_PROGRESS)) {      // Homing in progress
                 Thread::wait(250 - WDY_LOOP_INTERVAL);
                 DEBUG_PRINTF("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
