@@ -5,14 +5,14 @@
  * Distributed under terms of the MIT license.
  */
 
-#ifndef ACTIONS_H
-#define ACTIONS_H
+#ifndef UI_ACTIONS_H
+#define UI_ACTIONS_H
 
 #include "mbed.h"
 #include "libAC780.h"
 
 #include "WDY/helpers.h"
-#include "common.h"
+#include "ui/common.h"
 
 namespace LCD_UI {
     enum type_e {
@@ -111,12 +111,20 @@ namespace LCD_UI {
             case KEY_NONE:
                 break;
             case KEY_PLUS:
-                var++;
+                if ((var + step) > maximum)
+                    var = maximum;
+                else
+                    var += step;
+
                 if (instant_update && var_ptr != NULL)
                     *var_ptr = var;
                 break;
             case KEY_MINUS:
-                var--;
+                if ((var - step) < minimum)
+                    var = minimum;
+                else
+                    var -= step;
+
                 if (instant_update && var_ptr != NULL)
                     *var_ptr = var;
                 break;
@@ -219,4 +227,4 @@ namespace LCD_UI {
     };
 }
 
-#endif /* !ACTIONS_H */
+#endif /* !UI_ACTIONS_H */

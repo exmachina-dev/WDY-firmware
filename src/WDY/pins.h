@@ -5,13 +5,12 @@
  * Distributed under terms of the MIT license.
  */
 
-#ifndef PINS_H
-#define PINS_H
+#ifndef WDY_PINS_H
+#define WDY_PINS_H
 
 #include "config.h"
 
 #include "PinNames.h"
-#include "mbed.h"
 
 #define LED1            P0_9
 #define LED2            P1_18
@@ -32,8 +31,8 @@
 
 #define LCD_BACKLIGHT   P0_22
 
-#define FAN_P1          P3_25
-#define FAN_P2          P3_26
+#define FAN_P1          P3_26
+#define FAN_P2          P3_25
 
 #define DRV_ENABLE      P1_26
 #define DRV_ERROR       P1_29
@@ -45,9 +44,9 @@
 #define USBRX           ISP_RXD
 #define USBTX           ISP_TXD
 
-#define ADC_LOADPIN     P0_25
+#define ADC_LOADPIN     P0_23
 #define ADC_TEMP0       P0_24
-#define ADC_TEMP1       P0_23
+#define ADC_TEMP1       P0_25
 
 #define I2C0_SDA        P0_27
 #define I2C0_SCL        P0_28
@@ -66,4 +65,4 @@
 #define CAN1_RXD        P0_0
 #define CAN1_TXD        P0_1
 
-#endif /* !PINS_H */
+#endif /* !WDY_PINS_H */
