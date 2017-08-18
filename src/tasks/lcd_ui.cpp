@@ -68,10 +68,10 @@ void UI_app_task(void) {
     button4.mode(PullUp);
     button5.mode(PullUp);
 
-    button2.fall(&enter_interrupt);
-    button3.fall(&down_interrupt);
-    button4.fall(&up_interrupt);
-    button5.fall(&menu_interrupt);
+    button2.fall(&menu_interrupt);
+    button3.fall(&up_interrupt);
+    button4.fall(&down_interrupt);
+    button5.fall(&enter_interrupt);
 
     // I2C bus speed: 400 kHz
     i2c2.frequency(400 * 1000);
