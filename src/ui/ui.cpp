@@ -23,6 +23,8 @@ namespace LCD_UI {
         last_key = KEY_NONE;
         current_key = KEY_UNKNOWN;
 
+        _display_splashscreen_flag = false;
+
         _display_menu_flag = false;
         _update_menu_flag = true;
         _update_buttons_flag = true;
@@ -30,6 +32,11 @@ namespace LCD_UI {
     }
 
     void UI::update() {
+        if(_display_splashscreen_flag) {
+            // Nothing to do
+            return;
+        }
+
         if(!_display_menu_flag) { // Don't do anything in the menu
             switch (current_key) {
                 case KEY_UNKNOWN:
@@ -163,6 +170,44 @@ namespace LCD_UI {
         lcd->putc(1);
     }
 
+    void UI::splashscreen(int8_t percent, const char *text) {
+        _display_splashscreen_flag = true;
+        lcd->locate(0, 0);
+        lcd->printf("   WINCH  DYNAMIC    ");
+        lcd->locate(1, 0);
+        lcd->printf("    by ExMachina     ");
+
+        if (percent < 0) {
+            lcd->locate(2, 1);
+            lcd->printf("ERROR %d", percent * -1);
+            lcd->locate(3, 1);
+            lcd->printf("                    ");
+            lcd->locate(3, 1);
+            lcd->printf(" %s", text);
+        } else if (percent >= 100) {
+            _display_splashscreen_flag = false;
+
+            lcd->locate(3, 1);
+            printbar(18, 100);
+            lcd->clear();
+
+            lcd->setUDC(0, UDC_arrow_left);
+            lcd->setUDC(1, UDC_arrow_right);
+            lcd->setUDC(2, UDC_arrow_up);
+            lcd->setUDC(3, UDC_arrow_down);
+            lcd->setUDC(4, UDC_icon_menu);
+            lcd->setUDC(5, UDC_icon_ok);
+            lcd->setUDC(6, UDC_icon_cancel);
+        } else {
+            lcd->locate(2, 0);
+            lcd->printf("                    ");
+            lcd->locate(2, 1);
+            lcd->printf(" %s", text);
+            lcd->locate(3, 1);
+            printbar(18, percent);
+        }
+    }
+
     void UI::displayButtonsBar(mode_e mode=MODE_NAV) {
         char icons[] = {4, 2, 3, 5};
 
@@ -213,5 +258,25 @@ namespace LCD_UI {
     void UI::blink_code(PwmOut *led, uint16_t code) {
         uint16_t n_cycle = _cycles % (4 * (code + 4));
         led->write((n_cycle > 7) ? (((n_cycle-8) / 2) % 2) : 0);
+    }
+
+    void UI::printbar(int length, int perc) {
+        for (int i=0; i<length; i++) {
+            if (perc > (i * 100 / length)) {
+                if (!i)
+                    lcd->putc(1);
+                else if (i == length-1)
+                    lcd->putc(5);
+                else
+                    lcd->putc(3);
+            } else {
+                if (!i)
+                    lcd->putc(0);
+                else if (i == length-1)
+                    lcd->putc(4);
+                else
+                    lcd->putc(2);
+            }
+        }
     }
 }

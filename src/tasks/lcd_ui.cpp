@@ -25,26 +25,6 @@ volatile bool WDY_UI_ENTER_FLAG;
 // static buffer for the error strings
 char wdy_init_text[18];
 
-void printbar(int length, int perc) {
-    for (int i=0; i<length; i++) {
-        if (perc > (i * 100 / length)) {
-            if (!i)
-                lcd.putc(1);
-            else if (i == length-1)
-                lcd.putc(5);
-            else
-                lcd.putc(3);
-        } else {
-            if (!i)
-                lcd.putc(0);
-            else if (i == length-1)
-                lcd.putc(4);
-            else
-                lcd.putc(2);
-        }
-    }
-}
-
 void menu_interrupt(void) {
     WDY_UI_MENU_FLAG = true;
 }
@@ -159,7 +139,7 @@ void UI_app_task(void) {
     set_action_backlight.maximum = 60;
 
     while (true) {
-        while (_init) {
+        if (_init) {
             led1 = 1;
             led2 = 1;
             led3 = 1;
@@ -167,35 +147,19 @@ void UI_app_task(void) {
 
 
             if (WDY_STATE.init_state < 0) {
-                lcd.locate(3, 1);
-                lcd.printf("                    ");
-                lcd.locate(3, 1);
-                lcd.printf("ERROR %d", WDY_STATE.init_state);
+                ui.splashscreen(WDY_STATE.init_state, wdy_init_text);
             } else if (WDY_STATE.init_state >= 100) {
                 _init = false;
 
-                lcd.locate(3, 1);
-                printbar(18, 100);
+                ui.splashscreen(WDY_STATE.init_state, wdy_init_text);
                 Thread::wait(500);
-                lcd.clear();
-
-                lcd.setUDC(0, UDC_arrow_left);
-                lcd.setUDC(1, UDC_arrow_right);
-                lcd.setUDC(2, UDC_arrow_up);
-                lcd.setUDC(3, UDC_arrow_down);
-                lcd.setUDC(4, UDC_icon_menu);
-                lcd.setUDC(5, UDC_icon_ok);
-                lcd.setUDC(6, UDC_icon_cancel);
 
                 led1 = 0;
                 led2 = 0;
                 led3 = 0;
                 led4 = 0;
             } else {
-                lcd.locate(2, 1);
-                lcd.printf(" %s                   ", wdy_init_text);
-                lcd.locate(3, 1);
-                printbar(18, WDY_STATE.init_state);
+                ui.splashscreen(WDY_STATE.init_state, wdy_init_text);
             }
 
             Thread::wait(50);

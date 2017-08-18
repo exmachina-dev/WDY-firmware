@@ -37,18 +37,22 @@ namespace LCD_UI {
             void setDefaultAction(Action *_action);
 
             bool display_menu(void);
+            void splashscreen(int8_t percent, const char *text);
 
             void blink_code(PwmOut *led, uint16_t code);
 
         private:
             Action *active_action;
             key_e last_key, current_key;
+            bool _display_splashscreen_flag;
             bool _display_menu_flag;
 
             bool _update_buttons_flag;
             bool _update_menu_flag;
 
             uint16_t _cycles;
+
+            void printbar(int length, int perc);
     };
 } // namespace UI
 
