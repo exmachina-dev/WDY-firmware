@@ -175,6 +175,8 @@ void LAN_app_task(void) {
             LAN_set_dmx(&LAN_node, WDY_STATE.config.artnet.dmx_addr, WDY_DMX_FOOTPRINT);
             LAN_set_dmx_callback(&LAN_node, &_dmx_cb);
             LAN_set_name(&LAN_node, WDY_SHORT_NAME, WDY_LONG_NAME);
+            LAN_set_esta(&LAN_node, LAN_ESTA_CODE_LO, LAN_ESTA_CODE_HI);
+            LAN_set_oem(&LAN_node, LAN_OEM_CODE_LO, LAN_OEM_CODE_HI);
 
             LAN_announce(&LAN_node);
         }

@@ -15,11 +15,13 @@
 // =============
 
 // Manufacturer and product constants
-#define AN_OEM_LO   0x32    // Winch Dynamic by ExMachina
-#define AN_OEM_HI   0x28    // Winch Dynamic by ExMachina
+#define LAN_OEM_CODE_LO   0x32    // Winch Dynamic by ExMachina
+#define LAN_OEM_CODE_HI   0x28    // Winch Dynamic by ExMachina
 
-#define AN_ESTA_LO  0x00
-#define AN_ESTA_HI  0x00
+#define LAN_ESTA_CODE_LO  0x00
+#define LAN_ESTA_CODE_HI  0x00
+
+#define WDY_DMX_FOOTPRINT   7
 
 // #define ARTNET_PRINTF USBport->printf
 
