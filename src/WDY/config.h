@@ -38,6 +38,7 @@
 #define WDY_LONG_NAME   "Winch Dynamic by ExMachina"
 
 #define WDY_LOOP_INTERVAL       10      // ms
+#define WDY_LOOP_FREQUENCY      1.0 / (WDY_LOOP_INTERVAL / 1000.0) // Hz
 
 #define WDY_COMMAND_SLOTS       16      // divide 255 by 16
 #define WDY_INVERT_POS_COMMAND  true    // invert position
@@ -61,12 +62,15 @@
 
 // Limits
 // ------
-#define WDY_MAX_SPEED           3000    // mm.s
+#define WDY_MAX_SPEED           3000.0  // mm.s
+#define WDY_MIN_SPEED           0.0     // mm.s
 #define WDY_MAX_POSITION        WDY_STRAP_LENGTH
-#define WDY_MIN_POSITION        0
+#define WDY_MIN_POSITION        0.0
 
-#define WDY_MAX_ACCEL           3000    // mm.s-1
-#define WDY_MAX_DECEL           3000    // mm.s-1
+#define WDY_MIN_ACCEL           0.1     // mm.s-1
+#define WDY_MAX_ACCEL           3000.0  // mm.s-1
+#define WDY_MIN_DECEL           0.1     // mm.s-1
+#define WDY_MAX_DECEL           3000.0  // mm.s-1
 
 #define WDY_MAX_HOMING_TIME     35000   // ms
 
