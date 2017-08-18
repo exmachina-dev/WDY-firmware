@@ -17,10 +17,6 @@ extern "C" {
 #include "CO_OD.h"
 }
 
-#define DMX_START       0
-
-#define ARTNET_DEBUG
-
 // Global variables and objects
 
 Watchdog wdog;
