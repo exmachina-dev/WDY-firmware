@@ -408,17 +408,22 @@ static void CO_app_task(void){
 
             timer1msCopy = CO_timer.read_ms();
 
-            if (new_dmx_sig) {                          // New DMX data
+            /* New DMX data */
+            if (new_dmx_sig) {
                 uint16_t raw_speed = DMXdevice.parameter.speed;
                 uint16_t raw_position = DMXdevice.parameter.position;
                 uint8_t raw_command = DMXdevice.parameter.command;
                 uint8_t raw_accel = DMXdevice.parameter.accel;
                 uint8_t raw_decel = DMXdevice.parameter.decel;
 
+                // Reset signal
+                new_dmx_sig = false;
+
 #if WDY_INVERT_POS_COMMAND
                 raw_position = DMX_MAX_VALUE16 - raw_position;
 #endif
 
+                // Conversion between n * 8 bit data to float and command
                 map_DMX16_to_world(raw_speed, &cmd_speed, WDY_MAX_SPEED);
                 map_DMX16_to_world(raw_position, &cmd_position, WDY_MAX_POSITION);
                 map_DMXcommand_to_command(raw_command, &cmd_command);
@@ -431,8 +436,7 @@ static void CO_app_task(void){
                 DEBUG_PRINTF("REAL cmd %d\t pos %f spd %f acc %f dec %f\r\n",
                         cmd_command, cmd_position, cmd_speed, cmd_accel, cmd_decel);
 
-                new_dmx_sig = false;                    // Reset signal
-
+                // Set signals if any parameter has changed
                 new_cmd_sig = (last_command != cmd_command);
                 new_mov_sig =
                     (last_position != cmd_position) | (last_speed != cmd_speed) |
