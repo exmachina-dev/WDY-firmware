@@ -490,6 +490,23 @@ static void CO_app_task(void){
             }
 
 
+            /* Check load */
+            load = read_loadpin(&adc_loadpin);
+            if (load < WDY_MIN_LOAD) {   // Underloaded
+                status = ADD_FLAG(status, WDY_STS_UNDERLOADED);
+                planner.plan(cmd_position, 0.0);    // Plan to stop
+                DEBUG_PRINTF("LOAD: U %f\r\n", load);
+            } else if (load > WDY_MAX_LOAD) {
+                status = ADD_FLAG(status, WDY_STS_OVERLOADED);
+                // Force stop
+                nd_cmd.to_int = MFE_CMD_NONE;
+                err = MFE_set_command(&node, &nd_cmd);
+                DEBUG_PRINTF("LOAD: O %f\r\n", load);
+                continue;
+            } else {
+                DEBUG_PRINTF("LOAD: N %f\r\n", load);
+            }
+
             if (new_mov_sig) {
                 planner.set_accel(cmd_accel);
                 planner.set_decel(cmd_decel);

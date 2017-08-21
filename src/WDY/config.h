@@ -62,6 +62,7 @@
 #define WDY_DEFAULT_ACCEL       500     // mm.s-1
 #define WDY_DEFAULT_DECEL       500     // mm.s-1
 
+
 // Limits
 // ------
 #define WDY_MAX_SPEED           3000.0  // mm.s
@@ -75,6 +76,9 @@
 #define WDY_MAX_DECEL           3000.0  // mm.s-1
 
 #define WDY_MAX_HOMING_TIME     35000   // ms
+
+#define WDY_MIN_LOAD            10.0    // N
+#define WDY_MAX_LOAD            10000.0 // N
 
 
 // Encoder
