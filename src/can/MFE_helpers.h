@@ -134,9 +134,10 @@ enum MFE_status {
     MFE_STS_HARD_LIMIT_FW =     0x0080,
     MFE_STS_HARD_LIMIT_RW =     0x0100,
     MFE_STS_IS_IDLE =           0x0200,
-    MFE_STS_UNPOWERED =         0x0400,
-    MFE_STS_COMM_FAULT =        0x0800,
-    MFE_STS_FLIP_BIT =          0x1000,
+    MFE_STS_IS_READY =          0x0400,
+    MFE_STS_UNPOWERED =         0x0800,
+    MFE_STS_COMM_FAULT =        0x1800,
+    MFE_STS_FLIP_BIT =          0x2000,
 };
 
 

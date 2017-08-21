@@ -23,6 +23,7 @@
 #define CHECK_FLAG(value, flag) ((value & flag) == flag)
 #define ADD_FLAG(value, flag) (value | flag)
 #define REMOVE_FLAG(value, flag) (value & ~flag)
+#define SWITCH_FLAG(value, flag, test) (test) ? ADD_FLAG(value, flag) : REMOVE_FLAG(value, flag)
 
 typedef enum {
     WDY_CMD_NONE =              0x00,
@@ -34,19 +35,24 @@ typedef enum {
 } wdy_command_t;
 
 typedef enum {
-    WDY_STS_NONE =              0x000,
-    WDY_STS_ENABLED =           0x001,
-    WDY_STS_HOMED =             0x002,
-    WDY_STS_HOME_IN_PROGRESS =  0x004,
-    WDY_STS_HOME_TIMEOUT =      0x008,
-    WDY_STS_BRAKE_ACTIVE =      0x010,
-    WDY_STS_SOFT_LIMIT_FW =     0x020,
-    WDY_STS_SOFT_LIMIT_RW =     0x040,
-    WDY_STS_HARD_LIMIT_FW =     0x080,
-    WDY_STS_HARD_LIMIT_RW =     0x100,
-    WDY_STS_UNPOWERED =         0x200,
-    WDY_STS_COMM_FAULT =        0x400,
-    WDY_STS_FLIP_BIT =          0x800,
+    WDY_STS_NONE =              0x00000,
+    WDY_STS_ENABLED =           0x00001,
+    WDY_STS_HOMED =             0x00002,
+    WDY_STS_HOME_IN_PROGRESS =  0x00004,
+    WDY_STS_HOME_TIMEOUT =      0x00008,
+    WDY_STS_BRAKE_ACTIVE =      0x00010,
+    WDY_STS_SOFT_LIMIT_FW =     0x00020,
+    WDY_STS_SOFT_LIMIT_RW =     0x00040,
+    WDY_STS_HARD_LIMIT_FW =     0x00080,
+    WDY_STS_HARD_LIMIT_RW =     0x00100,
+    WDY_STS_IS_IDLE =           0x00200,
+    WDY_STS_IS_READY =          0x00400,
+    WDY_STS_EMERGENCY_STOP =    0x00800,
+    WDY_STS_UNDERLOADED =       0x01000,
+    WDY_STS_OVERLOADED =        0x02000,
+    WDY_STS_UNPOWERED =         0x04000,
+    WDY_STS_COMM_FAULT =        0x08000,
+    WDY_STS_FLIP_BIT =          0x10000,
 } wdy_status_t;
 
 struct wdy_network_config_s {

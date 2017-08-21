@@ -444,48 +444,49 @@ static void CO_app_task(void){
             }
 
 
+            /* VFD status update */
             err = MFE_get_status(&node, &nd_sts);
             if (err != 0) {
-                DEBUG_PRINTF("get sts: %d\r\n", err);
+                DEBUG_PRINTF("VFD comm fault: %d\r\n", err);
                 status = ADD_FLAG(status, WDY_STS_COMM_FAULT);
+
+                // TODO: Try reset sequence
                 continue;
             } else {
+                uint32_t vfd_status = nd_sts.to_int;
+
                 status = REMOVE_FLAG(status, WDY_STS_COMM_FAULT);
 
-                if (!drive_enable.read() && CHECK_FLAG(nd_sts.to_int, MFE_STS_ENABLED)) {
-                    status = ADD_FLAG(status, WDY_STS_ENABLED);
-                } else
-                    status = REMOVE_FLAG(status, WDY_STS_ENABLED);
+                // Check ES
+                status = SWITCH_FLAG(status, WDY_STS_EMERGENCY_STOP, WDY_EMERGENCY_STOP_ENGAGED);
 
-                if (brake_sensor1.read() || brake_sensor2.read() || CHECK_FLAG(nd_sts.to_int, MFE_STS_BRAKE_ACTIVE)) {
+                // Check VFD readiness
+                if (!WDY_EMERGENCY_STOP_ENGAGED && CHECK_FLAG(vfd_status, MFE_STS_IS_READY)) {
+                    status = ADD_FLAG(status, WDY_STS_IS_READY);
+                } else
+                    status = REMOVE_FLAG(status, WDY_STS_IS_READY);
+
+                // Check brakes
+                if (WDY_BRAKE1_ENGAGED || WDY_BRAKE2_ENGAGED || CHECK_FLAG(vfd_status, MFE_STS_BRAKE_ACTIVE)) {
                     status = ADD_FLAG(status, WDY_STS_BRAKE_ACTIVE);
-                    DEBUG_PRINTF("BRAKE %d %d %d\r\n", brake_sensor1.read(), brake_sensor2.read(), CHECK_FLAG(nd_sts.to_int, MFE_STS_BRAKE_ACTIVE));
+                    DEBUG_PRINTF("BRAKE %d %d %d\r\n", WDY_BRAKE1_ENGAGED, WDY_BRAKE2_ENGAGED, CHECK_FLAG(vfd_status, MFE_STS_BRAKE_ACTIVE));
                 }
                 else {
                     status = REMOVE_FLAG(status, WDY_STS_BRAKE_ACTIVE);
                 }
 
-                if (CHECK_FLAG(nd_sts.to_int, MFE_STS_HARD_LIMIT_FW))
-                    status = ADD_FLAG(status, WDY_STS_HARD_LIMIT_FW);
-                else
-                    status = REMOVE_FLAG(status, WDY_STS_HARD_LIMIT_FW);
+                // Check hard limits
+                status = SWITCH_FLAG(status, WDY_STS_HARD_LIMIT_FW, CHECK_FLAG(vfd_status, MFE_STS_HARD_LIMIT_FW));
+                status = SWITCH_FLAG(status, WDY_STS_HARD_LIMIT_RW, CHECK_FLAG(vfd_status, MFE_STS_HARD_LIMIT_RW));
 
-                if (CHECK_FLAG(nd_sts.to_int, MFE_STS_HARD_LIMIT_RW))
-                    status = ADD_FLAG(status, WDY_STS_HARD_LIMIT_RW);
-                else
-                    status = REMOVE_FLAG(status, WDY_STS_HARD_LIMIT_RW);
+                // Check soft limits
+                status = SWITCH_FLAG(status, WDY_STS_SOFT_LIMIT_FW, CHECK_FLAG(vfd_status, MFE_STS_SOFT_LIMIT_FW));
+                status = SWITCH_FLAG(status, WDY_STS_SOFT_LIMIT_RW, CHECK_FLAG(vfd_status, MFE_STS_SOFT_LIMIT_RW));
 
-                if (CHECK_FLAG(nd_sts.to_int, MFE_STS_SOFT_LIMIT_FW))
-                    status = ADD_FLAG(status, WDY_STS_SOFT_LIMIT_FW);
-                else
-                    status = REMOVE_FLAG(status, WDY_STS_SOFT_LIMIT_FW);
+                // Check idle status
+                status = SWITCH_FLAG(status, WDY_STS_IS_IDLE, CHECK_FLAG(vfd_status, MFE_STS_IS_IDLE));
 
-                if (CHECK_FLAG(nd_sts.to_int, MFE_STS_SOFT_LIMIT_RW))
-                    status = ADD_FLAG(status, WDY_STS_SOFT_LIMIT_RW);
-                else
-                    status = REMOVE_FLAG(status, WDY_STS_SOFT_LIMIT_RW);
-
-                DEBUG_PRINTF("drv sts: %d %d\r\n", nd_sts.to_int, status);
+                DEBUG_PRINTF("VFD sts: %d %d\r\n", vfd_status, status);
             }
 
 

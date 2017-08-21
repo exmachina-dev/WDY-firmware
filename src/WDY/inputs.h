@@ -17,4 +17,10 @@ DigitalIn drive_error(DRV_ERROR);
 DigitalIn brake_sensor1(BRK_SENSOR1);
 DigitalIn brake_sensor2(BRK_SENSOR2);
 
+// Helper macros
+#define WDY_EMERGENCY_STOP_ENGAGED      ((bool) drive_enable.read())
+#define WDY_VFD_ERROR                   ((bool) drive_enable.read())
+#define WDY_BRAKE1_ENGAGED              ((bool) brake_sensor1.read())
+#define WDY_BRAKE2_ENGAGED              ((bool) brake_sensor1.read())
+
 #endif /* !WDY_INPUTS_H */

@@ -17,9 +17,10 @@ Bitfield Status
   hard_limit_fw As 7
   hard_limit_rw As 8
   is_idle As 9
-  unpowered As 10
-  comm_fault As 11
-  flip_bit As 12
+  is_ready As 10
+  unpowered As 11
+  comm_fault As 12
+  flip_bit As 14
 End Bitfield
 
 Bitfield HomeStatus_b
@@ -86,6 +87,8 @@ Task updateStatus
     _status.soft_limit_rw = POS(_axis) <= SOFTLIMITREVERSE(_axis)
     _status.hard_limit_fw = LIMITFORWARD(_axis)
     _status.hard_limit_rw = LIMITREVERSE(_axis)
+    _status.is_idle = IDLE(_axis)
+    _status.is_ready = DRIVEENABLEREADY(_axis)
     _status.unpowered = DRIVEBUSVOLTS(_axis) < Float(DRIVEBUSUNDERVOLTS(_axis))
     _status.comm_fault = BUSSTATE(_busCANOPEN) <> 0
     _status.flip_bit = Not(_lastStatus.flip_bit And 1)
