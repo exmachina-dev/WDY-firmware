@@ -364,8 +364,9 @@ static void CO_app_task(void){
 
         if(CO != NULL && CO->CANmodule[0]->CANnormal) {
 
+            /* Waiting for the drive to be ready */
             while (err != 0) {
-                DEBUG_PRINTF("Connecting to drive\r\n");
+                DEBUG_PRINTF("Connecting to VFD\r\n");
                 wdy_init_msg("Connecting to VFD");
                 WDY_STATE.init_state = 80;
                 CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
@@ -377,13 +378,13 @@ static void CO_app_task(void){
                     continue;
                 }
 
-                wdy_init_msg("VFD alive");
-                WDY_STATE.init_state = 85;
-
                 Thread::wait(500);
 
                 err = MFE_scan(CO_DRV_NODEID, &node, 100);
                 if (err) {
+                    wdy_init_msg("VFD not ready");
+                    WDY_STATE.init_state = 83;
+
                     Thread::wait(500);
                     continue;
                 }
@@ -393,7 +394,7 @@ static void CO_app_task(void){
                 Thread::wait(500);
 
                 err = MFE_connect(&node, 100);
-                printf("drive: %d\r\n", err);
+                DEBUG_PRINTF("VFD connect: %d\r\n", err);
 
                 CO->NMT->operatingState = CO_NMT_OPERATIONAL;
 
