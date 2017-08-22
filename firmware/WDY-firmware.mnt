@@ -212,11 +212,7 @@ End Task
 Event NETDATA0
   If _homeStatus.homed = 1 Then
     If DRIVEENABLE(0) AndAlso (NETFLOAT(0) <> 0) Then
-      SPEED(_axis) = clampToMaxSpeed(NETFLOAT(0))
-      If (AXISMODE(_axis) And _mdINCREMENT) AndAlso (IDLE(_axis) <> 1) Then
-        INCA(_axis) = _lastPos
-        GO(_axis)
-      End If
+      VELREF(_axis) = clampToMaxSpeed(NETFLOAT(0))
     Else
       STOP(_axis)
       NETFLOAT(0) = 0
@@ -226,17 +222,17 @@ End Event
 
 
 
-Event NETDATA1
-  If _homeStatus.homed = 1 Then
-    If DRIVEENABLE(0) AndAlso (MOTORBRAKESTATUS(0) = 0) Then
-      _lastPos = NETFLOAT(1)
-      INCA(_axis) = _lastPos
-      GO(_axis)
-    Else
-      STOP(_axis)
-    End If
-  End If
-End Event
+'Event NETDATA1
+'  If _homeStatus.homed = 1 Then
+'    If DRIVEENABLE(0) AndAlso (MOTORBRAKESTATUS(0) = 0) Then
+'      _lastPos = NETFLOAT(1)
+'      INCA(_axis) = _lastPos
+'      GO(_axis)
+'    Else
+'      STOP(_axis)
+'    End If
+'  End If
+'End Event
 
 
 
@@ -301,8 +297,15 @@ Event ONERROR
         Case _ecFWD_SOFT_LIMIT, _ecREV_SOFT_LIMIT
           STOP(_axis)
 
-        Case _ecFWD_HARD_LIMIT, _ecREV_HARD_LIMIT
-          STOP(_axis)
+        Case _ecFWD_HARD_LIMIT
+          If (VEL(0) >= 0) Then
+            STOP(_axis)
+          End If
+          
+        Case _ecREV_HARD_LIMIT
+          If (VEL(0) <= 0) Then
+            STOP(_axis)
+          End If
 
         'Handle limits
         Case _ecFOLLOWING_ERROR
