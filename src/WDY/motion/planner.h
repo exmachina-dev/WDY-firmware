@@ -39,6 +39,8 @@ namespace WDY_motion {
             Move* plan(float position, float speed);
             move_cmd_t get_next_interval();
             float get_distance();
+            uint32_t get_iter_cur() { return this->iter_cur; };
+            uint32_t get_iter_mov() { return this->iter_mov; };
 
             void set_accel(float _accel) {
                 this->accel = (_accel > WDY_MIN_ACCEL) ? _accel : WDY_MIN_ACCEL;

@@ -79,4 +79,5 @@ void Planner::_plan(float _position_new, float _speed_nom,
     this->position_tgt = _position_new;
     this->speed_tgt = _speed_nom;
     this->iter_cur = 0;
+    this->iter_mov = this->move_cur->total_move_intervals;
 }
