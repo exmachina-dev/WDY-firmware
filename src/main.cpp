@@ -312,9 +312,7 @@ static void CO_app_task(void){
     MFEnode_t   node;
 
     float enc_position = 0;
-    float enc_speed = 0;
-    float real_speed;
-    float real_position;
+    float enc_velocity = 0;
 
     float load;
 
@@ -324,15 +322,14 @@ static void CO_app_task(void){
     float cmd_decel = 0;
     wdy_command_t cmd_command = WDY_CMD_NONE;
 
-    float cmd_enc_position = 0;
-    float position_p = 0;
-    float position_i = 0;
-    float position_d = 0;
-    float position_error = 0;
-    float position_error_sum = 0;
-    float target_position = 0;
-    float last_position_error = 0;
-    float last_enc_position = 0;
+    float vel_command_lin = 0;
+    float vel_command_spl = 0;
+    float p_term = 0;
+    float i_term = 0;
+    float d_term = 0;
+    float following_error = 0;
+    float following_error_sum = 0;
+    float following_error_last = 0;
 
     uint16_t status = WDY_STS_NONE;
 
@@ -344,15 +341,13 @@ static void CO_app_task(void){
     float last_decel = 0;
     wdy_command_t last_command = WDY_CMD_NONE;
 
-    bdata_t nd_spd;
+    bdata_t nd_vel;
     bdata_t nd_pos;
     bdata_t nd_cmd;
     bdata_t nd_sts;
     bdata_t nd_accel;
     bdata_t nd_decel;
     bdata_t nd_temp;
-    bdata_t nd_mot_spd;
-    bdata_t nd_mot_pos;
 
     bool new_cmd_sig = false;
     bool new_mov_sig = false;
@@ -485,8 +480,6 @@ static void CO_app_task(void){
 
                 // Check idle status
                 status = SWITCH_FLAG(status, WDY_STS_IS_IDLE, CHECK_FLAG(vfd_status, MFE_STS_IS_IDLE));
-
-                DEBUG_PRINTF("VFD sts: %d %d\r\n", vfd_status, status);
             }
 
 
@@ -510,13 +503,10 @@ static void CO_app_task(void){
                 DEBUG_PRINTF("LOAD: N %f\r\n", load);
             }
 
-            if (new_mov_sig) {
-                planner.set_accel(cmd_accel);
-                planner.set_decel(cmd_decel);
-                planner.plan(cmd_position, cmd_speed);
-                DEBUG_PRINTF("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
-            }
+            DEBUG_PRINTF("VFD sts: %d %d\r\n", status);
 
+
+            /* Send new command to VFD */
             if (new_cmd_sig) {
                 if (cmd_command == WDY_CMD_ENABLE) {
                     nd_cmd.to_int = MFE_CMD_ENABLE;
@@ -545,70 +535,78 @@ static void CO_app_task(void){
             }
 
 
-            // Control loop of speed and position regarding external encoder
-            if (cmd_command == WDY_CMD_ENABLE && CHECK_FLAG(status, WDY_STS_HOMED)) {     // Normal loop
-                // First, get real position from encoder
+            /* Plan new move */
+            // TODO: Should we plan even if not homed ?
+            if (new_mov_sig) {
+                planner.set_accel(cmd_accel);
+                planner.set_decel(cmd_decel);
+                planner.plan(cmd_position, cmd_speed);
+                DEBUG_PRINTF("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
+            }
+
+
+            /* Check homing status */
+            if (cmd_command == WDY_CMD_ENABLE && CHECK_FLAG(status, WDY_STS_HOMED)) {   // Homed
+                // TODO: Should we plan even if not homed ?
+
+                WDY_motion::move_cmd_t move = planner.get_next_interval();
+
                 enc_position = encoder.getPosition();
+                enc_velocity = encoder.getSpeed();
+                following_error = move.position - enc_position;
 
-                if (!drive_enable.read() || !drive_error.read()) {
+                p_term = WDY_POS_KP * following_error;
 
-                    /*
-                    if (new_pos_sig || new_spd_sig) {                       // New position required
+                bool _ki = false;
+                if (WDY_POS_KIMODE == KIMODE_ALWAYS)
+                    _ki = true;
+                else if (WDY_POS_KIMODE == KIMODE_STEADY_STATE &&
+                        move.phase == WDY_motion::PHASE_IDLE)
+                    _ki = true;
+                else if (WDY_POS_KIMODE == KIMODE_SMART &&
+                        (move.phase == WDY_motion::PHASE_IDLE || move.phase == WDY_motion::PHASE_PLATE))
+                    _ki = true;
 
-                        last_position_error = 0;
-                        position_error_sum = 0;
+                if (_ki) {
+                    following_error_sum += following_error;
+                    i_term = WDY_POS_KI * following_error_sum;
+                } else
+                    i_term = 0.0;
 
-                    }
-                    */
+                if (WDY_POS_KD != 0.0) {
+                    d_term = WDY_POS_KD * (following_error - following_error_last);
+                    following_error_last = following_error;
+                } else
+                    d_term = 0.0;
 
-                    cmd_enc_position = cmd_position + 300;
-
-                    position_error = cmd_enc_position - enc_position;
-                    position_error_sum += position_error;
-                    position_p = WDY_POS_P * position_error;
-                    position_i = WDY_POS_I * position_error_sum;
-                    position_d = WDY_POS_D * (position_error - last_position_error);
-                    target_position = cmd_enc_position + position_p + position_i + position_d;
-
-                    DEBUG_PRINTF("PID cmd %f err %f ers %f p %f i %f d %f tar %f\r\n",
-                            cmd_enc_position,
-                            position_error, position_error_sum,
-                            position_p, position_i, position_d,
-                            target_position);
-
-                    last_enc_position = enc_position;
-                    last_position_error = position_error;
-
-                    target_position = length_to_drum_turns(target_position);
-                    if (target_position < 0)
-                        target_position = 0;
+                vel_command_lin = p_term + i_term + d_term;
+                vel_command_spl = linear_to_rot(vel_command_lin, length_to_drum_diameter(enc_position));
 
 #ifdef WDY_GEARBOX_RATIO
-                    nd_pos.to_float = target_position * WDY_GEARBOX_RATIO; // Position: real to turns
+                nd_vel.to_float = vel_command_spl * WDY_GEARBOX_RATIO; // Position: real to turns
 #else
-                    nd_pos.to_float = target_position; // Position: real to turns
+                nd_vel.to_float = vel_command_spl; // Position: real to turns
 #endif
-                    // Compute actual speed according to position
-                    nd_spd.to_float = linear_to_rot(target_position, length_to_drum_diameter(enc_position));
-                    err = MFE_set_speed(&node, &nd_spd);
+                err = MFE_set_velocity(&node, &nd_vel);
 
-                    if (err != 0) {
-                        status = ADD_FLAG(status, WDY_STS_COMM_FAULT);
-                        continue;
-                    }
+                if (err != 0) {
+                    status = ADD_FLAG(status, WDY_STS_COMM_FAULT);
+                    continue;
+                }
+
+                DEBUG_PRINTF("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
+                        status, nd_vel.to_float, move.position, enc_velocity, enc_position);
 
 
 
-                    DEBUG_PRINTF("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
-                            status, nd_spd.to_float, nd_pos.to_float, encoder.getSpeed(), enc_position);
             } else if (CHECK_FLAG(status, WDY_STS_HOME_IN_PROGRESS)) {      // Homing in progress
                 Thread::wait(250 - WDY_LOOP_INTERVAL);
-                DEBUG_PRINTF("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
+
                 if (CHECK_FLAG(nd_sts.to_int, MFE_STS_HOME_IN_PROGRESS)) {
                     status = ADD_FLAG(status, WDY_STS_HOME_IN_PROGRESS);
                     homing_time++;
 
-                    DEBUG_PRINTF("HOM htime %d inprogress\r\n", homing_time);
+                    DEBUG_PRINTF("HOM htime %d inprogress\r\n", homing_time * WDY_LOOP_INTERVAL_S);
                 } else if (homing_time >= 2 && CHECK_FLAG(nd_sts.to_int, MFE_STS_HOMED)) {
                     DEBUG_PRINTF("DRV STS %d\r\n", nd_sts.to_int);
                     Thread::wait(100);
@@ -628,33 +626,22 @@ static void CO_app_task(void){
                     err = MFE_set_accel(&node, &nd_accel);
                     err += MFE_set_decel(&node, &nd_decel);
 
-                    DEBUG_PRINTF("HOM htime %d done\r\n", homing_time);
+                    DEBUG_PRINTF("HOM htime %d done\r\n", homing_time * WDY_LOOP_INTERVAL_S);
 
                     homing_time = 0;
                 } else if (homing_time > (WDY_MAX_HOMING_TIME / WDY_LOOP_INTERVAL)) {
-                    DEBUG_PRINTF("HOM htime %d timeout\r\n", homing_time);
+                    DEBUG_PRINTF("HOM htime %d timeout\r\n", homing_time * WDY_LOOP_INTERVAL_S);
 
                     homing_time = 0;
-
-                    if (CHECK_FLAG(nd_sts.to_int, MFE_STS_UNPOWERED))
-                        status = ADD_FLAG(status, WDY_STS_UNPOWERED);
-
                     status = ADD_FLAG(status, WDY_STS_HOME_TIMEOUT);
                 } else if (CHECK_FLAG(nd_sts.to_int, MFE_STS_HOME_TIMEOUT)) {
-                    DEBUG_PRINTF("HOM htime %d timeout\r\n", homing_time);
+                    DEBUG_PRINTF("HOM htime %d timeout\r\n", homing_time * WDY_LOOP_INTERVAL_S);
 
                     status = ADD_FLAG(status, WDY_STS_HOME_TIMEOUT);
                 } else {
-                    DEBUG_PRINTF("HOME IN PROGRESS\r\n");
+                    DEBUG_PRINTF("HOME IN PROGRESS %d\r\n", homing_time * WDY_LOOP_INTERVAL_S);
                     homing_time++;
                 }
-            } else {
-                enc_position = encoder.getPosition();
-                enc_speed = encoder.getSpeed();
-
-                // Get load
-                load = read_loadpin(&adc_loadpin);
-                DEBUG_PRINTF("ENC mspd %f mpos %f load %f\r\n", enc_speed, enc_position, load);
             }
 
             // store commands

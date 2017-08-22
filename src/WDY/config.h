@@ -75,10 +75,26 @@
 #define WDY_MIN_DECEL           0.1     // mm.s-1
 #define WDY_MAX_DECEL           3000.0  // mm.s-1
 
-#define WDY_MAX_HOMING_TIME     35000   // ms
+#define WDY_MAX_HOMING_TIME     35 * 1000   // ms
 
 #define WDY_MIN_LOAD            10.0    // N
 #define WDY_MAX_LOAD            10000.0 // N
+
+
+// Position control loop factors
+// -----------------------------
+#define WDY_POS_KP               1.0      // Proportionnal term
+#define WDY_POS_KI               0.1      // Integral term
+#define WDY_POS_KD               0.0      // Derivative term
+
+enum WDY_kimode_e {
+    KIMODE_NEVER        = 0,
+    KIMODE_STEADY_STATE = 1,
+    KIMODE_SMART        = 2,
+    KIMODE_ALWAYS       = 3,
+};
+
+#define WDY_POS_KIMODE          (KIMODE_NEVER)
 
 
 // Encoder
