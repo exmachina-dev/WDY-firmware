@@ -1,3 +1,5 @@
+' vim: ft=mintbasic
+
 ' Custom bitfields
 Bitfield Command
   all As 0 To 31
@@ -61,7 +63,7 @@ Loop
     DRIVEENABLE(_axis) = 1
   End If
 
-  Wait(50)
+  Wait(10)
 End Loop
 End
 
@@ -83,8 +85,8 @@ Task updateStatus
     _status.enabled = DRIVEENABLE(_axis)
     _status.homed = _homeStatus.all
     _status.brake = MOTORBRAKESTATUS(_axis)
-    _status.soft_limit_fw = POS(_axis) >= SOFTLIMITFORWARD(_axis)
-    _status.soft_limit_rw = POS(_axis) <= SOFTLIMITREVERSE(_axis)
+    _status.soft_limit_fw = POS(_axis) > SOFTLIMITFORWARD(_axis)
+    _status.soft_limit_rw = POS(_axis) < SOFTLIMITREVERSE(_axis)
     _status.hard_limit_fw = LIMITFORWARD(_axis)
     _status.hard_limit_rw = LIMITREVERSE(_axis)
     _status.is_idle = IDLE(_axis)
@@ -106,8 +108,8 @@ Function clampToMaxSpeed(ByVal lspeed As Float) As Float
 
   If lspeed > _maxSpeed Then
     cspeed = _maxSpeed
-  ElseIf lspeed < 0 Then
-    cspeed = clampToMaxSpeed(lspeed * -1)
+  ElseIf lspeed < -_maxSpeed Then
+    cspeed = -_maxSpeed
   Else
     cspeed = lspeed
   End If
@@ -127,7 +129,7 @@ End Function
 
 
 
-Sub doHome()
+Task doHome
   Dim t0 As Time = 0
 
   _homeStatus.all = 0
@@ -149,7 +151,7 @@ Sub doHome()
 
   If t0 > _waitForDER Then
     _homeStatus.timeout = 1
-    Exit Sub
+    Exit Task
   End If
 
   DRIVEENABLE(0) = 1
@@ -160,6 +162,8 @@ Sub doHome()
   HOMEDECEL(_axis) = _homeAccel
   HOMESPEED(0) = _homeSpeed
   HOMEBACKOFF(0) = 5
+  
+  Pause(MOTORBRAKESTATUS(0) < 1)
 
   SPEED(_axis) = _homeSpeed / 2
   INCR(0) = -0.5               ' First, unroll strap to ensure the forward limit switch is cleared
@@ -182,7 +186,8 @@ Sub doHome()
 
   If t0 > _waitForHome Then
     _homeStatus.timeout = 1
-    Exit Sub
+    STOP(0)
+    Exit Task
   End If
 
   SPEED(_axis) = _defaultSpeed
@@ -198,7 +203,7 @@ Sub doHome()
   _homeStatus.homed = 1
   _homeStatus.home_in_progress = 0
   _homeStatus.timeout = 0
-End Sub
+End Task
 
 
 
@@ -247,7 +252,7 @@ Event NETDATA2
   End If
 
   If _cmd.home_command <> 0 Then
-    doHome()
+    Run(doHome)
     _cmd.home_command = 0
   End If
 
