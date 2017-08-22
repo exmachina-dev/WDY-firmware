@@ -57,7 +57,7 @@ Run(updateStatus)
 
 Loop
   NETFLOAT(5) = VEL(_axis)
-  NETFLOAT(6) = POS(_axis) * -1
+  NETFLOAT(6) = POS(_axis)
 
   If canDriveEnable() AndAlso (DRIVEENABLE(_axis) = 0) Then
     DRIVEENABLE(_axis) = 1
@@ -137,7 +137,7 @@ Task doHome
   STOP(_axis)
   Pause(IDLE(0))
 
-  LIMITFORWARDINPUT(0) = -1    ' Disable forward limit switch
+  LIMITREVERSEINPUT(0) = -1    ' Disable forward limit switch
 
   Pause(DRIVEENABLEREADY(_axis))
 
@@ -166,13 +166,15 @@ Task doHome
   Pause(MOTORBRAKESTATUS(0) < 1)
 
   SPEED(_axis) = _homeSpeed / 2
-  INCR(0) = -0.5               ' First, unroll strap to ensure the forward limit switch is cleared
-  GO(0)
+  If (LIMITFORWARD(0) = 0) Then
+    INCR(0) = 0.5               ' First, unroll strap to ensure the home limit switch is cleared
+    GO(0)
+  End If
 
   Pause(IDLE(0))
 
-  HOMEREFPOS(0) = _homeRefPos
-  HOME(0) = _hmPOSITIVE_SWITCH
+  HOMEREFPOS(0) = -_homeRefPos
+  HOME(0) = _hmNEGATIVE_SWITCH
 
   t0 = 0
   While t0 <= _waitForHome
@@ -196,7 +198,7 @@ Task doHome
 
   Pause(IDLE(_axis))
 
-  LIMITFORWARDINPUT(0) = 1     ' Enable forward limit switch
+  LIMITREVERSEINPUT(0) = 1     ' Enable forward limit switch
 
   SPEED(_axis) = 0
 
@@ -227,7 +229,7 @@ End Event
 Event NETDATA1
   If _homeStatus.homed = 1 Then
     If DRIVEENABLE(0) Then
-      _lastPos = NETFLOAT(1) * -1
+      _lastPos = NETFLOAT(1)
       INCA(_axis) = _lastPos
       GO(_axis)
     Else
