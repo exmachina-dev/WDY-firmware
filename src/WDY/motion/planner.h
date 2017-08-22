@@ -14,6 +14,7 @@
 
 namespace WDY_motion {
     struct move_cmd_s {
+        float position;
         float velocity;
         float accel;
         float decel;

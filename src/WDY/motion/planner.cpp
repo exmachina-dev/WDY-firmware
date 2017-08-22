@@ -60,6 +60,7 @@ move_cmd_t Planner::get_next_interval() {
     this->position_cur += this->velocity_cur * this->interval;
 
     move.velocity = this->velocity_cur;
+    move.position = this->position_cur;
 
     iter_cur++;
     return move;
