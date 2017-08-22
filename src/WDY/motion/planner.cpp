@@ -72,6 +72,7 @@ float Planner::get_distance() {
 
 void Planner::_plan(float _position_new, float _speed_nom,
         float _accel, float _decel) {
+    free(this->move_last);
     this->move_last = move_cur;
     this->move_cur = new Move(this->position_cur, _position_new,
             this->speed_cur, _speed_nom, _accel, _decel);
