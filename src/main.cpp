@@ -494,7 +494,8 @@ static void CO_app_task(void){
             load = read_loadpin(&adc_loadpin);
             if (load < WDY_MIN_LOAD) {   // Underloaded
                 status = ADD_FLAG(status, WDY_STS_UNDERLOADED);
-                planner.plan(cmd_position, 0.0);    // Plan to stop
+                if (!CHECK_FLAG(status, WDY_STS_IS_IDLE))
+                    planner.plan(cmd_position, 0.0);    // Plan to stop
                 DEBUG_PRINTF("LOAD: U %f\r\n", load);
             } else if (load > WDY_MAX_LOAD) {
                 status = ADD_FLAG(status, WDY_STS_OVERLOADED);
