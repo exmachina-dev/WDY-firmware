@@ -150,7 +150,7 @@ uint8_t MFE_read_netdata(MFEnode_t *node, uint16_t nd_index, bdata_t *dataRx, ui
 uint8_t MFE_write_netdata(MFEnode_t *node, uint16_t nd_index, bdata_t *dataTx, uint16_t timeoutTime);
 
 
-uint8_t MFE_set_speed(MFEnode_t *node, bdata_t *dataTx);
+uint8_t MFE_set_velocity(MFEnode_t *node, bdata_t *dataTx);
 
 uint8_t MFE_set_position(MFEnode_t *node, bdata_t *dataTx);
 

@@ -166,7 +166,7 @@ uint8_t MFE_write_netdata(MFEnode_t *node, uint16_t nd_index, bdata_t *dataTx, u
 
 // MFE helper functions for quick read/write parameters
 
-uint8_t MFE_set_speed(MFEnode_t *node, bdata_t *dataTx) {
+uint8_t MFE_set_velocity(MFEnode_t *node, bdata_t *dataTx) {
     return MFE_write_netdata(node, MFE_ND_SPEED_CMD, dataTx, MFE_TIMEOUT);
 }
 
