@@ -13,11 +13,21 @@
 #define WDY_LOOP_INTERVAL_S     (1000.0 / WDY_LOOP_INTERVAL)
 
 namespace WDY_motion {
+    enum phase_e {
+       PHASE_IDLE      = 0x1,
+       PHASE_ACCEL     = 0x2,
+       PHASE_PLATE     = 0x3,
+       PHASE_DECEL     = 0x4
+    };
+
+    typedef phase_e phase_t;
+
     struct move_cmd_s {
         float position;
         float velocity;
         float accel;
         float decel;
+        phase_t phase;
     };
 
     typedef move_cmd_s move_cmd_t;
