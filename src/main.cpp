@@ -505,6 +505,8 @@ static void CO_app_task(void){
                 DEBUG_PRINTF("LOAD: O %f\r\n", load);
                 continue;
             } else {
+                status = REMOVE_FLAG(status, WDY_STS_UNDERLOADED);
+                status = REMOVE_FLAG(status, WDY_STS_OVERLOADED);
                 DEBUG_PRINTF("LOAD: N %f\r\n", load);
             }
 
