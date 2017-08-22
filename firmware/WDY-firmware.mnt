@@ -228,7 +228,7 @@ End Event
 
 Event NETDATA1
   If _homeStatus.homed = 1 Then
-    If DRIVEENABLE(0) Then
+    If DRIVEENABLE(0) AndAlso (MOTORBRAKESTATUS(0) = 0) Then
       _lastPos = NETFLOAT(1)
       INCA(_axis) = _lastPos
       GO(_axis)
