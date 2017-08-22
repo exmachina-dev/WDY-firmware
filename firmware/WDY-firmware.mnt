@@ -45,9 +45,9 @@ Const _maxSpeed As Float = 100
 Const _defaultAccel As Float = 1
 Const _defaultSpeed As Float = 1
 
-Const _homeAccel As Float = 10
-Const _homeSpeed As Float = 1
-Const _homeRefPos As Float = 0.15
+Const _homeAccel As Float = _maxSpeed / 10
+Const _homeSpeed As Float = _maxSpeed / 50
+Const _homeRefPos As Float = 0.5
 
 Const _waitForDER As Integer = 5000    ' 5s
 Const _waitForHome As Integer = 30000  ' 30s
