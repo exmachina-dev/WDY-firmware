@@ -106,13 +106,15 @@ class DataPlotter(object):
             self._lines.append(line)
 
         if self._animate:
-            animation.FuncAnimation(self._fig, self.update, interval=100)
+            # FuncAnimation must be stored
+            self._animation = animation.FuncAnimation(self._fig, self.update, interval=100)
         else:
             self.update(0)
 
         for ax in self._axes:
             ax.set_autoscale_on(True)
             ax.relim()
+            ax.margins(y=1)
             ax.autoscale_view(True, True, True)
             ax.legend()
 
@@ -121,6 +123,7 @@ class DataPlotter(object):
 
     def show(self):
         self._fig.set_tight_layout(True)
+        plt.autoscale(enable=True, axis='y')
         plt.show()
 
     def close(self):
@@ -139,7 +142,7 @@ class SerialPlotter(DataPlotter):
         self._buffer = b''
         self._animate = True
 
-    def update(self, frameNum, ax, ay):
+    def update(self, frameNum):
         try:
             rdata = self.ser.read(self.ser.in_waiting or 1)
             self._buffer += (rdata)
@@ -162,7 +165,7 @@ class SerialPlotter(DataPlotter):
         except KeyboardInterrupt:
             print('exiting')
 
-        return ax,
+        return self.ax,
 
     def _find_lines(self):
         packets = list()
@@ -183,9 +186,10 @@ class SerialPlotter(DataPlotter):
         return packets
 
     def close(self):
-        super().close(self)
+        super().close()
 
-        self.output_file.close()
+        if self.output_file:
+            self.output_file.close()
 
         self.ser.flush()
         self.ser.close()
