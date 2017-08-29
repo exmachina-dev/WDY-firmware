@@ -10,7 +10,7 @@
 #define _S_THK          WDY_STRAP_THICKNESS
 #define _D_DIA          WDY_DRUM_CORE_DIA
 
-uint8_t map_DMX16_to_world(uint16_t DMXvalue, float *mvalue, float minValue, float maxValue) {
+uint8_t map_DMX16(uint16_t DMXvalue, float *mvalue, float minValue, float maxValue) {
     float _value;
 
     _value = map(0.0, DMX_MAX_VALUE16, minValue, maxValue, DMXvalue);
@@ -19,11 +19,11 @@ uint8_t map_DMX16_to_world(uint16_t DMXvalue, float *mvalue, float minValue, flo
 
     return 0;
 }
-uint8_t map_DMX16_to_world(uint16_t DMXvalue, float *mvalue, float maxValue) {
-    return map_DMX16_to_world(DMXvalue, mvalue, 0.0, maxValue);
+uint8_t map_DMX16(uint16_t DMXvalue, float *mvalue, float maxValue) {
+    return map_DMX16(DMXvalue, mvalue, 0.0, maxValue);
 }
 
-uint8_t map_DMX8_to_world(uint8_t DMXvalue, float *mvalue, float minValue, float maxValue) {
+uint8_t map_DMX8(uint8_t DMXvalue, float *mvalue, float minValue, float maxValue) {
     float _value;
 
     _value = map(0.0, DMX_MAX_VALUE8, minValue, maxValue, DMXvalue);
@@ -32,11 +32,11 @@ uint8_t map_DMX8_to_world(uint8_t DMXvalue, float *mvalue, float minValue, float
 
     return 0;
 }
-uint8_t map_DMX8_to_world(uint8_t DMXvalue, float *mvalue, float maxValue) {
-    return map_DMX8_to_world(DMXvalue, mvalue, 0.0, maxValue);
+uint8_t map_DMX8(uint8_t DMXvalue, float *mvalue, float maxValue) {
+    return map_DMX8(DMXvalue, mvalue, 0.0, maxValue);
 }
 
-uint8_t map_DMXcommand_to_command(uint8_t DMXcommand, wdy_command_t *mcommand) {
+uint8_t map_DMXcommand(uint8_t DMXcommand, wdy_command_t *mcommand) {
     wdy_command_t _cmd;
 
     _cmd = (wdy_command_t)(DMXcommand / WDY_COMMAND_SLOTS);

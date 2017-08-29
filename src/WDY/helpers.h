@@ -112,16 +112,17 @@ typedef union {
 
 typedef struct wdy_state_s wdy_state_t;
 
-uint8_t map_DMX16_to_world(uint16_t DMXvalue, float *mvalue, float maxValue);
-uint8_t map_DMX16_to_world(uint16_t DMXvalue, float *mvalue, float minValue, float maxValue);
 
+uint8_t map_DMX16(uint16_t DMXvalue, float *mvalue, float maxValue);
+uint8_t map_DMX16(uint16_t DMXvalue, float *mvalue, float minValue, float maxValue);
 
-uint8_t map_DMX8_to_world(uint8_t DMXvalue, float *mvalue, float maxValue);
-uint8_t map_DMX8_to_world(uint8_t DMXvalue, float *mvalue, float minValue, float maxValue);
+uint8_t map_DMX8(uint8_t DMXvalue, float *mvalue, float maxValue);
+uint8_t map_DMX8(uint8_t DMXvalue, float *mvalue, float minValue, float maxValue);
 
-uint8_t map_DMXcommand_to_command(uint8_t DMXcommand, wdy_command_t *mcommand);
+uint8_t map_DMXcommand(uint8_t DMXcommand, wdy_command_t *mcommand);
 
 float map(int from_val1, int from_val2, int to_val1, int to_val2, float value);
+
 
 float length_to_drum_turns(float length);
 
