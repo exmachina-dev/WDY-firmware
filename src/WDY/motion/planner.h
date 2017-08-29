@@ -35,7 +35,7 @@ namespace WDY_motion {
             Planner();
 
             Move* plan(float position, float speed);
-            move_cmd_t get_next_interval();
+            void get_next_interval(move_cmd_t *move);
             float get_distance();
             uint32_t get_iter_cur() { return this->iter_cur; };
             uint32_t get_iter_mov() { return this->iter_mov; };
@@ -65,7 +65,6 @@ namespace WDY_motion {
             float interval;
 
             Move *move_cur;
-            Move *move_last;
 
             void _plan(float _position_new, float _speed_nom,
                     float _accel, float _decel);

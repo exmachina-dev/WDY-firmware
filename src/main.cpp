@@ -353,6 +353,7 @@ static void CO_app_task(void){
     bool new_mov_sig = false;
 
     WDY_motion::Planner planner;
+    WDY_motion::move_cmd_t move_cmd;
 
     while (true) {
         Thread::wait(WDY_LOOP_INTERVAL); // wait before to ensure this delay is always repected
@@ -551,11 +552,11 @@ static void CO_app_task(void){
             if (cmd_command == WDY_CMD_ENABLE && CHECK_FLAG(status, WDY_STS_HOMED)) {   // Homed
                 // TODO: Should we plan even if not homed ?
 
-                WDY_motion::move_cmd_t move = planner.get_next_interval();
+                planner.get_next_interval(&move_cmd);
 
                 enc_position = encoder.getPosition();
                 enc_velocity = encoder.getSpeed();
-                following_error = move.position - enc_position;
+                following_error = move_cmd.position - enc_position;
 
                 p_term = WDY_POS_KP * following_error;
 
@@ -563,10 +564,10 @@ static void CO_app_task(void){
                 if (WDY_POS_KIMODE == KIMODE_ALWAYS)
                     _ki = true;
                 else if (WDY_POS_KIMODE == KIMODE_STEADY_STATE &&
-                        move.phase == WDY_motion::PHASE_IDLE)
+                        move_cmd.phase == WDY_motion::PHASE_IDLE)
                     _ki = true;
                 else if (WDY_POS_KIMODE == KIMODE_SMART &&
-                        (move.phase == WDY_motion::PHASE_IDLE || move.phase == WDY_motion::PHASE_PLATE))
+                        (move_cmd.phase == WDY_motion::PHASE_IDLE || move_cmd.phase == WDY_motion::PHASE_PLATE))
                     _ki = true;
 
                 if (_ki) {

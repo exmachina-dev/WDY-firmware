@@ -42,34 +42,38 @@ Move* Planner::plan(float _position, float _speed) {
     return this->move_cur;
 }
 
-move_cmd_t Planner::get_next_interval() {
-    move_cmd_t move;
-    move.accel = this->accel;
-    move.decel = this->decel;
+void Planner::get_next_interval(move_cmd_t * move) {
+    move->accel = this->accel;
+    move->decel = this->decel;
 
     float distance_cur = this->get_distance();
 
     if (distance_cur == 0 || this->accel <= 0.0 || this->decel <= 0.0) {
         iter_cur++;
-        move.velocity = 0.0;
-        return move;
+        move->position = this->position_cur;
+        move->velocity = 0.0;
+        move->phase = PHASE_IDLE;
+        return;
     }
 
     if (this->move_cur->total_move_intervals < this->iter_cur) // STOP
         this->velocity_cur = 0.0;
+        move->phase = PHASE_IDLE;
     else if (this->move_cur->accelerate_until > this->iter_cur) // ACCEL
         this->velocity_cur += this->move_cur->accel * this->interval * (float) this->move_cur->get_direction();
+        move->phase = PHASE_ACCEL;
     else if (this->move_cur->decelerate_after < this->iter_cur) // DECEL
         this->velocity_cur -= this->move_cur->decel * this->interval * (float) this->move_cur->get_direction();
-    // else // PLATE
+        move->phase = PHASE_DECEL;
+    } else
+        move->phase = PHASE_PLATE;
 
     this->position_cur += this->velocity_cur * this->interval;
 
-    move.velocity = this->velocity_cur;
-    move.position = this->position_cur;
+    move->velocity = this->velocity_cur;
+    move->position = this->position_cur;
 
     iter_cur++;
-    return move;
 }
 
 float Planner::get_distance() {
@@ -78,8 +82,9 @@ float Planner::get_distance() {
 
 void Planner::_plan(float _position_new, float _speed_nom,
         float _accel, float _decel) {
-    free(this->move_last);
-    this->move_last = move_cur;
+    if (this->move_cur != NULL)
+        free(this->move_cur);
+
     this->move_cur = new Move(this->position_cur, _position_new,
             this->speed_cur, _speed_nom, _accel, _decel);
 
