@@ -95,7 +95,7 @@ direction_e Move::get_direction() {
     if (this->position_cur < this->position_new)
         return DIR_FORWARD;
     else if (this->position_cur > this->position_new)
-        return DIR_BACKMARD;
+        return DIR_BACKWARD;
     else
         return DIR_NONE;
 }

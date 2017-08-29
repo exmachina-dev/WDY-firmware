@@ -13,7 +13,7 @@
 
 namespace WDY_motion {
     enum direction_e {
-        DIR_BACKMARD    = -1,
+        DIR_BACKWARD    = -1,
         DIR_NONE        = 0,
         DIR_FORWARD     = 1
     };
