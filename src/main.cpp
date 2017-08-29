@@ -29,7 +29,7 @@ extern "C" void mbed_reset();
 
 Ticker ticker_sync;
 
-Thread CO_app_thread;
+Thread CO_app_thread(osPriorityAboveNormal, 1024);
 
 
 // ArtNet
@@ -41,7 +41,7 @@ UDPSocket* LAN_sock = NULL;
 artnet_packet_t* LAN_packet = NULL;
 artnet_packet_t _packet;
 
-Thread LAN_app_thread(osPriorityAboveNormal, 1024 * 2);
+Thread LAN_app_thread(osPriorityNormal, 1024 + 512);
 
 Thread UI_app_thread(osPriorityBelowNormal, 1024);
 Ticker ticker_leds;
