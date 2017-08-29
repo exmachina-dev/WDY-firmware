@@ -10,8 +10,6 @@
 
 #include "move.h"
 
-#define WDY_LOOP_INTERVAL_S     (1000.0 / WDY_LOOP_INTERVAL)
-
 namespace WDY_motion {
     enum phase_e {
        PHASE_IDLE      = 0x1,

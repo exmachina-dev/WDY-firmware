@@ -40,7 +40,8 @@
 #define WDY_LONG_NAME   "Winch Dynamic by ExMachina"
 
 #define WDY_LOOP_INTERVAL       10      // ms
-#define WDY_LOOP_FREQUENCY      1.0 / (WDY_LOOP_INTERVAL / 1000.0) // Hz
+#define WDY_LOOP_INTERVAL_S     (float) (WDY_LOOP_INTERVAL / 1000.0)
+#define WDY_LOOP_FREQUENCY      (float) 1.0 / WDY_LOOP_INTERVAL_S // Hz
 
 #define WDY_COMMAND_SLOTS       16      // divide 255 by 16
 #define WDY_INVERT_POS_COMMAND  true    // invert position
