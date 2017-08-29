@@ -82,11 +82,11 @@ int main(void) {
     WDY_STATE.init_state = 10;
 
     bool ret = WDY_eeprom_read_config(&eeprom, &eeprom_data);
-    printf("RET %d", ret);
-    printf(" STS %d", eeprom_data.eeprom_state);
-    printf(" VER %d\r\n", eeprom_data.eeprom_version);
-    printf("SOF CFG %d\r\n", sizeof(wdy_config_t));
-    printf("SOF EEP %d\r\n", sizeof(wdy_eeprom_data_t));
+
+    DEBUG_PRINTF("INTERVAL %f", WDY_LOOP_INTERVAL_S);
+    DEBUG_PRINTF("RET %d", ret);
+    DEBUG_PRINTF(" STS %d", eeprom_data.eeprom_state);
+    DEBUG_PRINTF(" VER %d\r\n", eeprom_data.eeprom_version);
 
     if (eeprom_data.eeprom_state == WDY_EEPROM_STATE_BLANK || eeprom_data.eeprom_state == 255) {
         WDY_eeprom_erase_config(&eeprom);
@@ -109,16 +109,16 @@ int main(void) {
 
         ret = WDY_eeprom_read_config(&eeprom, &eeprom_data);
         printf("sNET DHC %d ", eeprom_data.config.network.dhcp);
-        printf("sNET STA %d ", eeprom_data.config.network.static_addr);
-        printf("sNET IPA %s ", inet_ntoa(eeprom_data.config.network.ip_addr));
-        printf("sNET NMA %s ", inet_ntoa(eeprom_data.config.network.nm_addr));
-        printf("sNET GWA %s\r\n", inet_ntoa(eeprom_data.config.network.gw_addr));
+        printf("STA %d ", eeprom_data.config.network.static_addr);
+        printf("IPA %s ", inet_ntoa(eeprom_data.config.network.ip_addr));
+        printf("NMA %s ", inet_ntoa(eeprom_data.config.network.nm_addr));
+        printf("GWA %s\r\n", inet_ntoa(eeprom_data.config.network.gw_addr));
         printf("sART NET %d ", eeprom_data.config.artnet.net);
-        printf("sART SUB %d ", eeprom_data.config.artnet.subnet);
-        printf("sART UNI %d ", eeprom_data.config.artnet.universe);
-        printf("sART DMX %d\r\n", eeprom_data.config.artnet.dmx_addr);
+        printf("SUB %d ", eeprom_data.config.artnet.subnet);
+        printf("UNI %d ", eeprom_data.config.artnet.universe);
+        printf("DMX %d\r\n", eeprom_data.config.artnet.dmx_addr);
         printf("sSCR CTR %d ", eeprom_data.config.screen.contrast);
-        printf("sSCR BCK %d\r\n", eeprom_data.config.screen.backlight);
+        printf("BCK %d\r\n", eeprom_data.config.screen.backlight);
     } else {
         printf("NET DHC %d ", eeprom_data.config.network.dhcp);
         printf("NET STA %d ", eeprom_data.config.network.static_addr);
@@ -487,8 +487,10 @@ static void CO_app_task(void){
             load = read_loadpin(&adc_loadpin);
             if (load < WDY_MIN_LOAD) {   // Underloaded
                 status = ADD_FLAG(status, WDY_STS_UNDERLOADED);
-                if (!CHECK_FLAG(status, WDY_STS_IS_IDLE))
+                if (!CHECK_FLAG(status, WDY_STS_IS_IDLE)) {
                     planner.plan(cmd_position, 0.0);    // Plan to stop
+                    DEBUG_PRINTF("MOV S");
+                }
                 DEBUG_PRINTF("LOAD: U %f\r\n", load);
             } else if (load > WDY_MAX_LOAD) {
                 status = ADD_FLAG(status, WDY_STS_OVERLOADED);
@@ -503,7 +505,7 @@ static void CO_app_task(void){
                 DEBUG_PRINTF("LOAD: N %f\r\n", load);
             }
 
-            DEBUG_PRINTF("VFD sts: %d %d\r\n", status);
+            DEBUG_PRINTF("VFD sts: %d\r\n", status);
 
 
             /* Send new command to VFD */
@@ -541,7 +543,7 @@ static void CO_app_task(void){
                 planner.set_accel(cmd_accel);
                 planner.set_decel(cmd_decel);
                 planner.plan(cmd_position, cmd_speed);
-                DEBUG_PRINTF("STATUS cmd %d sts %d err %d\r\n", cmd_command, status, err);
+                DEBUG_PRINTF("MOV NEW\r\n");
             }
 
 
@@ -594,8 +596,11 @@ static void CO_app_task(void){
                     continue;
                 }
 
-                DEBUG_PRINTF("MOT sts %d spd %f pos %f mspd %f mpos %f\r\n",
-                        status, nd_vel.to_float, move.position, enc_velocity, enc_position);
+                DEBUG_PRINTF("PID err %.2f p %.2f err_s %.2f i %.2f err_d %.2f d %.2f\r\n",
+                    following_error, p_term, following_error_sum, i_term,
+                    (following_error - following_error_last), d_term);
+                DEBUG_PRINTF("MOT vel_cmd %.2f vel %.2f\r\n",
+                    vel_command_lin, enc_velocity);
 
 
 
