@@ -419,12 +419,12 @@ static void CO_app_task(void){
 #endif
 
                 // Conversion between n * 8 bit data to float and command
-                map_DMX16_to_world(raw_speed, &cmd_speed, WDY_MAX_SPEED);
-                map_DMX16_to_world(raw_position, &cmd_position, WDY_MAX_POSITION);
+                map_DMX16_to_world(raw_speed, &cmd_speed, WDY_MIN_SPEED, WDY_MAX_SPEED);
+                map_DMX16_to_world(raw_position, &cmd_position, WDY_MIN_POSITION, WDY_MAX_POSITION);
                 map_DMXcommand_to_command(raw_command, &cmd_command);
 
-                map_DMX8_to_world(raw_accel, &cmd_accel, WDY_MAX_ACCEL);
-                map_DMX8_to_world(raw_decel, &cmd_decel, WDY_MAX_DECEL);
+                map_DMX8_to_world(raw_accel, &cmd_accel, WDY_MIN_ACCEL, WDY_MAX_ACCEL);
+                map_DMX8_to_world(raw_decel, &cmd_decel, WDY_MIN_DECEL, WDY_MAX_DECEL);
 
                 DEBUG_PRINTF("DMX cmd %d\t pos %d spd %d acc %d dec %d\r\n",
                         raw_command, raw_position, raw_speed, raw_accel, raw_decel);
