@@ -553,6 +553,8 @@ static void CO_app_task(void){
                 // TODO: Should we plan even if not homed ?
 
                 planner.get_next_interval(&move_cmd);
+                DEBUG_PRINTF("MOV INC: pos %f vel %f acc %f dec %f %d\r\n",
+                        move_cmd.position, move_cmd.velocity, move_cmd.accel, move_cmd.decel, move_cmd.phase);
 
                 enc_position = encoder.getPosition();
                 enc_velocity = encoder.getSpeed();
