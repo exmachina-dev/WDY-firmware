@@ -38,9 +38,9 @@ namespace WDY_motion {
             float accel;
             float decel;
 
-            float accelerate_until;
-            float decelerate_after;
-            float total_move_intervals;
+            uint32_t accelerate_until;
+            uint32_t decelerate_after;
+            uint32_t total_move_intervals;
 
             float accel_time;
             float decel_time;

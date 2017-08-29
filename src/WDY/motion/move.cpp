@@ -74,13 +74,13 @@ void Move::_compute() {
     float total_move_time = time_to_accelerate + time_to_decelerate + plateau_time;
 
     // Round the times into intervals
-    float accel_intervals = floorf(time_to_accelerate * WDY_LOOP_FREQUENCY);
-    float decel_intervals = floorf(time_to_decelerate * WDY_LOOP_FREQUENCY);
+    uint32_t accel_intervals = floorf(time_to_accelerate * WDY_LOOP_FREQUENCY);
+    uint32_t decel_intervals = floorf(time_to_decelerate * WDY_LOOP_FREQUENCY);
     this->total_move_intervals = floorf(total_move_time * WDY_LOOP_FREQUENCY);
 
-    this->accel_time = accel_intervals / WDY_LOOP_FREQUENCY;
-    this->decel_time = decel_intervals / WDY_LOOP_FREQUENCY;
-    this->total_move_time = this->total_move_intervals / WDY_LOOP_FREQUENCY;
+    this->accel_time = (float) accel_intervals * WDY_LOOP_INTERVAL_S;
+    this->decel_time = (float) decel_intervals * WDY_LOOP_INTERVAL_S;
+    this->total_move_time = (float) this->total_move_intervals * WDY_LOOP_INTERVAL_S;
 
     // Now figure out the two acceleration ramp change events in intervals
     this->accelerate_until = accel_intervals;
