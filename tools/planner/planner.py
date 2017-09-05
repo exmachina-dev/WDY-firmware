@@ -324,42 +324,43 @@ if __name__ == '__main__':
     kwargs = vars(args)
     p = Planner(**kwargs)
 
-    p.plan_move(1000, 100)
-    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
-        p.iter()
+    p.plan_move(1000, p.max_speed/2)
+    p.iter_move()
 
-    p.plan_move(1500, 50)
-    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
-        p.iter()
+    p.acceleration = p.max_acceleration
+    p.deceleration = p.max_deceleration
+    p.plan_move(18000, p.max_speed)
+    p.iter_move(p.move.total_move_intervals / 8)
+    print('Current distance is {:.1f}mm'.format(p.current_position))
 
-    p.plan_move(500, 100)
-    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
-        p.iter()
+    p.plan_move(0, p.max_speed)
+    p.iter_move(p.move.total_move_intervals / 4)
+    print('Current position is {:.1f}mm'.format(p.current_position))
 
-    p.plan_move(0, 1000)
-    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
-        p.iter()
+    p.plan_move(30000, p.max_speed/2)
+    p.iter_move()
 
-    p.plan_move(500, 100)
-    for i in range(int(p.move.total_move_time / 2 * p._frequency)): # Only iter for half the range
-        p.iter()
+    p.acceleration = p.max_acceleration/3
+    p.deceleration = p.max_deceleration/6
+    p.plan_move(1000, p.max_speed/2)
+    p.iter_move(p.move.total_move_intervals - (1 * p._frequency))
 
-    p.plan_move(0, 100)
-    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
-        p.iter()
+    p.plan_move(0, p.max_speed)
+    p.iter_move(p.move.total_move_intervals * 1.25)
 
     p.plan_move(500, 50)
-    for i in range(int(p.move.total_move_time / 2 * p._frequency)): # Only iter for half the range
-        p.iter()
+    p.iter_move(p.move.total_move_intervals / 2)
 
     p.plan_move(0, 200)
-    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
-        p.iter()
+    p.iter_move()
 
     p.plan_move(500, 100)
-    for i in range(int(p.move.total_move_time / 2 * p._frequency)): # Only iter for half the range
-        p.iter()
+    p.iter_move(p.move.total_move_intervals / 2)
 
     p.plan_move(0, 200)
-    for i in range(int(p.move.total_move_time * p._frequency + 0.25 * p._frequency)):
-        p.iter()
+    p.iter_move()
+    p.iter()
+
+    p.plan_move(0, 200)
+    p.iter_move()
+    p.iter()
